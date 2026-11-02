@@ -1,0 +1,12 @@
+<form method="post"
+      action="{{ path('app_offer_save', {id: offer.id}) }}"
+      class="inline-form"
+      id="save-offer-{{ offer.id }}">
+    <input type="hidden" name="_token" value="{{ csrf_token('save-offer') }}">
+    <button type="submit"
+            class="button"
+            aria-pressed="{{ saved ? 'true' : 'false' }}"
+            data-action="{{ saved ? 'sonar#drop' : 'sonar#keep' }}">
+        {{ (saved ? 'application.unsave_action' : 'application.save_action')|trans }}
+    </button>
+</form>

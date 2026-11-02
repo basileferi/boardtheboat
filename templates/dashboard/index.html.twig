@@ -1,0 +1,166 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'dashboard.title'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">{{ 'dashboard.eyebrow'|trans }} · {{ 'now'|format_date(pattern: 'EEEE d MMMM') }}</p>
+            <h1 data-split>{{ 'dashboard.title'|trans }}</h1>
+            <p class="lede">{{ 'dashboard.lede'|trans }}</p>
+        </div>
+        <div class="page-head__aside">
+            {% if lastRun %}
+                <p class="sync sync--{{ lastRun.status.value }}">
+                    <span class="sync__dot" aria-hidden="true"></span>
+                    {{ 'dashboard.last_sync'|trans }}
+                    <time datetime="{{ lastRun.startedAt|date('c') }}">{{ lastRun.startedAt|format_datetime(pattern: 'd MMM · HH:mm') }}</time>
+                </p>
+            {% else %}
+                <p class="sync sync--never"><span class="sync__dot" aria-hidden="true"></span>{{ 'dashboard.never_synced'|trans }}</p>
+            {% endif %}
+            <a class="button button--primary" href="{{ path('app_offers') }}">{{ 'dashboard.open_offers'|trans }}</a>
+        </div>
+    </div>
+
+    <section class="kpi-grid" aria-label="{{ 'dashboard.kpis'|trans }}">
+        {% for kpi in kpis %}
+            <article class="kpi kpi--{{ kpi.tone }}{{ loop.first or kpi.key == 'due' ? ' kpi--wide' : '' }}" data-reveal>
+                <header class="kpi__head">
+                    <span class="kpi__index" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
+                    <h2 class="kpi__label">{{ ('dashboard.metric.' ~ kpi.key)|trans }}</h2>
+                </header>
+
+                <p class="kpi__value">
+                    <span data-controller="countup"
+                          data-countup-to-value="{{ kpi.value }}"
+                          data-countup-suffix-value="{{ kpi.suffix ?? '' }}">{{ kpi.value|format_number }}{{ kpi.suffix ?? '' }}</span>
+                </p>
+
+                {% if kpi.delta is not null %}
+                    <p class="kpi__delta">{{ ('dashboard.delta.' ~ kpi.key)|trans({'%count%': kpi.delta}) }}</p>
+                {% endif %}
+
+                {% if kpi.spark is defined %}
+                    <ol class="spark" aria-label="{{ 'dashboard.activity'|trans }}">
+                        {% for day in kpi.spark %}
+                            <li class="spark__bar h-{{ day.height }}" title="{{ day.date|format_date(pattern: 'd MMM') }} — {{ day.count }}">
+                                <span class="visually-hidden">{{ day.date|format_date(pattern: 'd MMM') }} : {{ day.count }}</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+
+                {% if kpi.key == 'due' %}
+                    {% if due is empty %}
+                        <p class="kpi__note">{{ 'dashboard.no_due'|trans }}</p>
+                    {% else %}
+                        <ul class="kpi__list">
+                            {% for application in due|slice(0, 3) %}
+                                <li><span>{{ application.company.name }}</span><span class="tag tag--signal">{{ application.followUpAt|format_date(pattern: 'd MMM') }}</span></li>
+                            {% endfor %}
+                        </ul>
+                        <a class="kpi__link" href="{{ path('app_pipeline') }}">{{ 'dashboard.open_pipeline'|trans }} →</a>
+                    {% endif %}
+                {% endif %}
+
+                <span class="kpi__line" aria-hidden="true"></span>
+            </article>
+        {% endfor %}
+    </section>
+
+    <div class="grid-2">
+        <section class="panel panel--glow" data-reveal>
+            <header class="panel__head">
+                <p class="eyebrow">{{ 'dashboard.sources_title'|trans }}</p>
+                <p class="muted">{{ 'dashboard.sources_lede'|trans }}</p>
+            </header>
+            {% if sources is empty %}
+                <p class="empty-state">{{ 'dashboard.no_offers'|trans }}</p>
+            {% else %}
+                <ul class="plain-list meters">
+                    {% for source in sources %}
+                        <li class="meter">
+                            <span class="meter__label">{{ ('source.' ~ source.name)|trans }}</span>
+                            <span class="meter__track"><span class="meter__fill w-{{ source.width }}"></span></span>
+                            <span class="meter__figure">{{ source.count }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+
+        <section class="panel panel--glow" data-reveal>
+            <header class="panel__head">
+                <p class="eyebrow">{{ 'dashboard.funnel_title'|trans }}</p>
+                <p class="muted">{{ 'dashboard.funnel_lede'|trans }}</p>
+            </header>
+            <ul class="plain-list meters">
+                {% for step in funnel %}
+                    <li class="meter meter--{{ step.status }}">
+                        <span class="meter__label">{{ ('pipeline_status.' ~ step.status)|trans }}</span>
+                        <span class="meter__track"><span class="meter__fill w-{{ step.width }}"></span></span>
+                        <span class="meter__figure">{{ step.count }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <a class="button" href="{{ path('app_pipeline') }}">{{ 'dashboard.open_pipeline'|trans }}</a>
+        </section>
+    </div>
+
+    <div class="grid-2">
+        <section class="panel" data-reveal>
+            <header class="panel__head">
+                <p class="eyebrow">{{ 'dashboard.latest_title'|trans }}</p>
+            </header>
+            {% if latestOffers is empty %}
+                <p class="empty-state">{{ 'dashboard.no_offers'|trans }}</p>
+            {% else %}
+                <ol class="plain-list feed">
+                    {% for offer in latestOffers %}
+                        <li>
+                            <a class="feed__item" href="{{ path('app_offer_show', {id: offer.id}) }}">
+                                <span class="feed__title">{{ offer.title }}</span>
+                                <span class="feed__meta">
+                                    {{ offer.company.name }}
+                                    {% if offer.location %} · {{ offer.location|length > 40 ? offer.location|slice(0, 40) ~ '…' : offer.location }}{% endif %}
+                                </span>
+                                <span class="feed__side">
+                                    <span class="tag">{{ ('source.' ~ offer.source)|trans }}</span>
+                                    {% if offer.publishedAt %}<time class="feed__date" datetime="{{ offer.publishedAt|date('c') }}">{{ offer.publishedAt|format_date(pattern: 'dd.MM') }}</time>{% endif %}
+                                </span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ol>
+            {% endif %}
+        </section>
+
+        <section class="panel" data-reveal>
+            <header class="panel__head">
+                <p class="eyebrow">{{ 'dashboard.top_companies'|trans }}</p>
+            </header>
+            {% if topScores is empty %}
+                <p class="muted">{{ 'dashboard.no_scores'|trans }}</p>
+                <a class="button" href="{{ path('app_recommendations') }}">{{ 'dashboard.open_recommendations'|trans }}</a>
+            {% else %}
+                <ul class="plain-list stack">
+                    {% for score in topScores %}
+                        <li class="ranked">
+                            <span class="ranked__rank" aria-hidden="true">{{ loop.index }}</span>
+                            <span class="ranked__body">
+                                <span class="ranked__name">{{ score.company.name }}</span>
+                                <span class="muted">{{ score.company.city }}{% if score.company.sector %} · {{ score.company.sector }}{% endif %}</span>
+                            </span>
+                            <span class="sounding" role="img" aria-label="{{ 'recommendation.score'|trans }} {{ score.score }}/100">
+                                <span class="sounding__track"><span class="sounding__draught w-{{ (score.score / 5)|round * 5 }}"></span></span>
+                                <span class="sounding__figure">{{ score.score }}</span>
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <a class="button" href="{{ path('app_recommendations') }}">{{ 'dashboard.open_recommendations'|trans }}</a>
+            {% endif %}
+        </section>
+    </div>
+{% endblock %}

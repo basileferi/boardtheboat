@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'company.action.new'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">{{ 'company.eyebrow'|trans }}</p>
+            <h1>{{ 'company.action.new'|trans }}</h1>
+            <p class="lede">{{ 'company.new_lede'|trans }}</p>
+        </div>
+    </div>
+
+    {{ include('company/_form.html.twig', {button_label: 'company.action.create'}) }}
+{% endblock %}

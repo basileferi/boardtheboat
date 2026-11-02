@@ -1,0 +1,20 @@
+parameters:
+    level: 8
+    phpVersion:
+        min: 80400
+        max: 80599
+    paths:
+        - src
+        - tests
+    excludePaths:
+        analyseAndScan:
+            - tests/bootstrap.php
+            - tests/console-application.php
+            - tests/object-manager.php
+    tmpDir: var/phpstan
+    symfony:
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+        consoleApplicationLoader: tests/console-application.php
+    doctrine:
+        objectManagerLoader: tests/object-manager.php
+    treatPhpDocTypesAsCertain: false

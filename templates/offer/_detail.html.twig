@@ -1,0 +1,40 @@
+{% if selected is null %}
+    <p class="empty-state">{{ 'search.pick_an_offer'|trans }}</p>
+{% else %}
+    <article class="panel panel--detail stack">
+        <header>
+            <p class="eyebrow">{{ selected.company.name }}</p>
+            <h2>{{ selected.title }}</h2>
+            <p class="row muted">
+                {% if selected.location %}<span>{{ selected.location }}</span>{% endif %}
+                {% if selected.publishedAt %}
+                    <span>· {{ 'search.published_on'|trans }} {{ selected.publishedAt|format_date(pattern='d MMMM yyyy') }}</span>
+                {% endif %}
+                {% if selected.salaryText %}<span>· {{ selected.salaryText }}</span>{% endif %}
+            </p>
+            <p class="row">
+                <span class="tag tag--tide">{{ ('contract_type.' ~ selected.contractType.value)|trans }}</span>
+                <span class="tag">{{ ('work_mode.' ~ selected.workMode.value)|trans }}</span>
+                <span class="tag {{ selected.status.value == 'open' ? '' : 'tag--flag' }}">
+                    {{ ('offer_status.' ~ selected.status.value)|trans }}
+                </span>
+                {% if selected.company.sector %}<span class="tag">{{ selected.company.sector }}</span>{% endif %}
+                <span class="tag tag--source">{{ 'search.via'|trans }} {{ ('source.' ~ selected.source)|trans }}</span>
+            </p>
+        </header>
+
+        <div class="prose">{{ selected.description|nl2br }}</div>
+
+        <footer class="row">
+            {% include 'application/_save_button.html.twig' with {offer: selected, saved: selectedIsSaved} only %}
+            <a class="button button--primary" href="{{ selected.url }}" target="_blank" rel="noopener noreferrer">
+                {{ 'search.open_original'|trans }}
+            </a>
+            {% if selected.company.careerUrl %}
+                <a class="button" href="{{ selected.company.careerUrl }}" target="_blank" rel="noopener noreferrer">
+                    {{ 'search.company_careers'|trans }}
+                </a>
+            {% endif %}
+        </footer>
+    </article>
+{% endif %}

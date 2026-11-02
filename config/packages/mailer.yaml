@@ -1,0 +1,6 @@
+framework:
+    mailer:
+        dsn: '%env(MAILER_DSN)%'
+        # every mail (and the notifier's admin alerts) leaves with the same sender
+        headers:
+            From: '%env(MAILER_FROM_NAME)% <%env(MAILER_FROM_ADDRESS)%>'

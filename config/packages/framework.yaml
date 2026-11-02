@@ -1,0 +1,39 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+    # lets an html form say DELETE through a hidden _method field (cours 8 / activité 6)
+    http_method_override: true
+
+    # Note that the session will be started ONLY if you read or write from it.
+    session:
+        cookie_secure: auto
+        cookie_httponly: true
+        cookie_samesite: lax
+        # The session cookie must not be readable from JavaScript and must not
+        # travel on cross-site POSTs; "lax" still allows normal top-level navigation.
+        name: BTBSESSID
+
+    # Every outbound call identifies itself and gives up quickly: the free APIs we read are
+    # shared public goods, and a slow one must never hold a worker slice hostage.
+    http_client:
+        default_options:
+            headers:
+                User-Agent: 'boardtheboat/1.0 (+%env(HTTP_FETCHER_CONTACT_URL)%)'
+                Accept: 'application/json'
+            timeout: 10
+            max_duration: 30
+            max_redirects: 3
+
+when@prod:
+    framework:
+        trusted_proxies: '%env(TRUSTED_PROXIES)%'
+        trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file
+        # tests never reach the internet: every outbound call gets an empty canned answer
+        http_client:
+            mock_response_factory: App\Tests\Support\OfflineHttpResponses

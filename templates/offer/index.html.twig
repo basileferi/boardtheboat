@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'search.title'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">{{ 'search.eyebrow'|trans }}</p>
+            <h1 data-split>{{ 'search.title'|trans }}</h1>
+            <p class="lede">{{ 'search.count'|trans({'%count%': total}) }}</p>
+        </div>
+    </div>
+
+    {{ form_start(searchForm, {attr: {class: 'filters', 'data-controller': 'filters-autosubmit'}}) }}
+        {{ form_row(searchForm.keyword) }}
+        {{ form_row(searchForm.company) }}
+        {{ form_row(searchForm.location) }}
+        {{ form_row(searchForm.contractTypes) }}
+        {{ form_row(searchForm.workModes) }}
+        {{ form_row(searchForm.region) }}
+        {{ form_row(searchForm.status) }}
+        {{ form_row(searchForm.sort) }}
+        <div class="filters__actions">
+            <button type="submit" class="button button--primary">{{ 'search.apply'|trans }}</button>
+            <a class="button button--quiet" href="{{ path('app_offers') }}">{{ 'search.reset'|trans }}</a>
+        </div>
+    {{ form_end(searchForm) }}
+
+    <div class="split" data-controller="split-view">
+        <turbo-frame id="job-list" class="split__list" data-split-view-target="list">
+            {% include 'offer/_list.html.twig' %}
+        </turbo-frame>
+
+        <turbo-frame id="job-detail" class="split__detail" data-split-view-target="detail">
+            {% include 'offer/_detail.html.twig' %}
+        </turbo-frame>
+    </div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'security.reset.new_password'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <h1>{{ 'security.reset.new_password'|trans }}</h1>
+
+    {{ form_start(resetForm, {attr: {class: 'form form--narrow'}}) }}
+        {{ form_row(resetForm.plainPassword.first) }}
+        {{ form_row(resetForm.plainPassword.second) }}
+        <button type="submit" class="button button--primary">{{ 'security.reset.save'|trans }}</button>
+    {{ form_end(resetForm) }}
+{% endblock %}

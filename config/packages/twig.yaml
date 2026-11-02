@@ -1,0 +1,10 @@
+twig:
+    file_name_pattern: '*.twig'
+    globals:
+        # Whether the public sign-up link is shown at all (single-client mode keeps it off).
+        registration_open: '%app.registration_open%'
+        supported_locales: '%app.supported_locales%'
+
+when@test:
+    twig:
+        strict_variables: true

@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'security.login.title'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <h1>{{ 'security.login.title'|trans }}</h1>
+
+    {% if error %}
+        <p class="flash flash--error" role="alert">{{ error.messageKey|trans(error.messageData, 'security') }}</p>
+    {% endif %}
+
+    <form method="post" action="{{ path('app_login') }}" class="form form--narrow">
+        <div class="field">
+            <label for="inputEmail">{{ 'security.login.email'|trans }}</label>
+            <input type="email" id="inputEmail" name="email" value="{{ last_username }}" autocomplete="email" required autofocus>
+        </div>
+
+        <div class="field">
+            <label for="inputPassword">{{ 'security.login.password'|trans }}</label>
+            <input type="password" id="inputPassword" name="password" autocomplete="current-password" required>
+        </div>
+
+        <div class="field field--inline">
+            <input type="checkbox" id="rememberMe" name="_remember_me" value="on">
+            <label for="rememberMe">{{ 'security.login.remember_me'|trans }}</label>
+        </div>
+
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+        <button type="submit" class="button button--primary">{{ 'security.login.submit'|trans }}</button>
+    </form>
+
+    <p><a href="{{ path('app_forgot_password_request') }}">{{ 'security.login.forgot_password'|trans }}</a></p>
+    {% if registration_open %}
+        <p><a href="{{ path('app_register') }}">{{ 'security.login.no_account'|trans }}</a></p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+<a class="offer"
+   href="{{ path('app_offer_show', {id: offer.id}) }}"
+   data-turbo-frame="job-detail"
+   data-turbo-action="advance"
+   data-split-view-target="item"
+   aria-current="{{ current ? 'true' : 'false' }}">
+    <span class="offer__tick" aria-hidden="true"></span>
+
+    <span>
+        <span class="offer__title">{{ offer.title }}</span>
+        <span class="offer__meta">
+            <span>{{ offer.company.name }}</span>
+            {% if offer.location %}<span>· {{ offer.location }}</span>{% endif %}
+        </span>
+        <span class="offer__meta">
+            <span class="tag">{{ ('contract_type.' ~ offer.contractType.value)|trans }}</span>
+            <span class="tag">{{ ('work_mode.' ~ offer.workMode.value)|trans }}</span>
+            {% if offer.publishedAt %}
+                <span class="offer__date">{{ offer.publishedAt|format_date(pattern='dd.MM') }}</span>
+            {% endif %}
+        </span>
+    </span>
+</a>

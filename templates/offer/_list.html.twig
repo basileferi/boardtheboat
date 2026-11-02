@@ -1,0 +1,13 @@
+{% if page.isEmpty %}
+    <p class="empty-state">{{ 'search.no_result'|trans }}</p>
+{% else %}
+    {% for offer in page.items %}
+        {% include 'offer/_card.html.twig' with {offer: offer, current: selected is not null and selected.id == offer.id} only %}
+    {% endfor %}
+
+    {% if nextPageUrl %}
+        <a class="button button--quiet" href="{{ nextPageUrl }}" data-turbo-frame="_top">
+            {{ 'search.load_more'|trans }}
+        </a>
+    {% endif %}
+{% endif %}

@@ -1,0 +1,5 @@
+<turbo-stream action="replace" target="save-offer-{{ offer.id }}">
+    <template>
+        {% include 'application/_save_button.html.twig' with {offer: offer, saved: saved} only %}
+    </template>
+</turbo-stream>

@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'company.title'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">{{ 'company.eyebrow'|trans }}</p>
+            <h1 data-split>{{ 'company.title'|trans }}</h1>
+            <p class="lede">{{ 'company.lede'|trans }}</p>
+        </div>
+        <a class="button button--primary" href="{{ path('app_company_new') }}">{{ 'company.action.new'|trans }}</a>
+    </div>
+
+    <form method="get" action="{{ path('app_company_index') }}" class="filters" data-controller="filters-autosubmit">
+        <div>
+            <label for="company-q">{{ 'company.search'|trans }}</label>
+            <input type="search" id="company-q" name="q" value="{{ query }}" placeholder="{{ 'company.search_placeholder'|trans }}">
+        </div>
+        <div class="row">
+            <input type="checkbox" id="company-mine" name="mine" value="1" {{ mine ? 'checked' : '' }}>
+            <label for="company-mine">{{ 'company.only_mine'|trans }}</label>
+        </div>
+        <div class="filters__actions">
+            <button type="submit" class="button">{{ 'search.apply'|trans }}</button>
+        </div>
+    </form>
+
+    {% if companies is empty %}
+        <p class="empty-state">{{ 'company.empty'|trans }}</p>
+    {% else %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>{{ 'company.field.name'|trans }}</th>
+                        <th>{{ 'company.field.city'|trans }}</th>
+                        <th>{{ 'company.field.sector'|trans }}</th>
+                        <th>{{ 'company.visibility_label'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in companies %}
+                        <tr id="company-{{ company.id }}">
+                            <td><a href="{{ path('app_company_show', {id: company.id}) }}">{{ company.name }}</a></td>
+                            <td>{{ company.city ?? '—' }}</td>
+                            <td>{{ company.sector ?? '—' }}</td>
+                            <td><span class="tag {{ company.owner ? 'tag--brass' : '' }}">{{ ('company.visibility.' ~ company.visibility.value)|trans }}</span></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+{% endblock %}

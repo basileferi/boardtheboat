@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'admin.dashboard.title'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">{{ 'admin.dashboard.eyebrow'|trans }}</p>
+            <h1 data-split>{{ 'admin.dashboard.title'|trans }}</h1>
+            <p class="lede">{{ 'admin.dashboard.lede'|trans }}</p>
+        </div>
+        <form method="post" action="{{ path('app_admin_refresh') }}" class="inline-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin-refresh') }}">
+            <button type="submit" class="button button--primary">{{ 'admin.refresh.action'|trans }}</button>
+        </form>
+    </div>
+
+    <section class="panel" data-reveal>
+        <header class="panel__head">
+            <p class="eyebrow">{{ 'admin.runs.title'|trans }}</p>
+            <p class="muted">{{ 'admin.runs.lede'|trans }}</p>
+        </header>
+
+        {% if runs is empty %}
+            <p class="empty-state">{{ 'admin.runs.empty'|trans }}</p>
+        {% else %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">{{ 'admin.runs.started'|trans }}</th>
+                            <th scope="col">{{ 'admin.runs.trigger'|trans }}</th>
+                            <th scope="col">{{ 'admin.runs.status'|trans }}</th>
+                            <th scope="col">{{ 'admin.runs.duration'|trans }}</th>
+                            <th scope="col">{{ 'admin.runs.counts'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for run in runs %}
+                            <tr>
+                                <td>{{ run.startedAt|format_datetime(pattern: 'd MMM HH:mm') }}</td>
+                                <td>{{ run.trigger }}</td>
+                                <td><span class="tag tag--{{ run.status.value == 'success' ? 'signal' : (run.status.value == 'running' ? 'tide' : 'flag') }}">{{ run.status.value }}</span></td>
+                                <td class="numeric">{{ run.durationSeconds ?? '—' }} s</td>
+                                <td>
+                                    {% for step, count in run.counts %}
+                                        <span class="tag">{{ step }} {{ count }}</span>
+                                    {% endfor %}
+                                    {% for error in run.errors %}
+                                        <p class="muted">{{ error }}</p>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

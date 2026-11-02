@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'home.title'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <section class="hero">
+        <p class="eyebrow">{{ 'home.eyebrow'|trans }}</p>
+        <h1 class="display" data-split>{{ 'home.title'|trans }}</h1>
+
+        <div class="hero__foot">
+            <p class="hero__lede">{{ 'home.lede'|trans }}</p>
+            <p class="row">
+                <a class="button button--primary" href="{{ path(app.user ? 'app_dashboard' : 'app_login') }}">{{ 'home.cta_signin'|trans }}</a>
+                {% if registration_open and not app.user %}
+                    <a class="button" href="{{ path('app_register') }}">{{ 'home.cta_signup'|trans }}</a>
+                {% endif %}
+            </p>
+        </div>
+    </section>
+
+    <div class="marquee" aria-hidden="true">
+        <div class="marquee__track">
+            {% for pass in 1..2 %}
+                {% for word in 'home.marquee'|trans|split('|') %}
+                    <span class="marquee__item">{{ word }}</span><span class="marquee__star">✳</span>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <section class="stats" aria-label="{{ 'home.stats_title'|trans }}">
+        {% for key, value in counts %}
+            <article class="stat" data-reveal>
+                <span class="stat__line" aria-hidden="true"></span>
+                <p class="stat__value"><span data-controller="countup" data-countup-to-value="{{ value }}">{{ value|format_number }}</span></p>
+                <p class="stat__label">{{ ('home.stats.' ~ key)|trans }}</p>
+            </article>
+        {% endfor %}
+    </section>
+
+    <section class="features">
+        {% for feature in ['automatic', 'spontaneous', 'relance'] %}
+            <article class="panel feature feature--{{ ['purple', 'pink', 'orange'][loop.index0] }}" data-reveal>
+                <span class="feature__index" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
+                <p class="eyebrow">{{ ('home.feature.' ~ feature ~ '.label')|trans }}</p>
+                <h2>{{ ('home.feature.' ~ feature ~ '.title')|trans }}</h2>
+                <p class="muted">{{ ('home.feature.' ~ feature ~ '.body')|trans }}</p>
+            </article>
+        {% endfor %}
+    </section>
+
+    {#
+        The thesis, drawn: what the nightly run actually does, as four soundings. The depths
+        are the pipeline's four steps, not decoration - the same meter shape is reused
+        everywhere a score is shown.
+    #}
+    <section class="panel soundings" data-reveal aria-hidden="true">
+        <p class="eyebrow">{{ 'home.pipeline_title'|trans }}</p>
+        {% for step, depth in {discover: 95, dedupe: 75, score: 90, brief: 50} %}
+            <div class="soundings__row">
+                <span class="soundings__label">{{ ('home.step.' ~ step)|trans }}</span>
+                <span class="sounding">
+                    <span class="sounding__track"><span class="sounding__draught w-{{ depth }}"></span></span>
+                </span>
+            </div>
+        {% endfor %}
+    </section>
+{% endblock %}

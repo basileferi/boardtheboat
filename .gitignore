@@ -1,0 +1,47 @@
+###> symfony/framework-bundle ###
+# no env file is tracked except the example: secrets only ever live on each machine
+/.env
+/.env.*
+!/.env.dist
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###
+
+###> phpstan/phpstan ###
+/phpstan.neon
+###< phpstan/phpstan ###
+
+###> boardtheboat ###
+/build/
+###< boardtheboat ###
+
+###> IDE ###
+boardtheboat.iml
+.idea/*
+!.idea/runConfigurations/
+###< IDE ###
+
+###> course material (not part of the app) ###
+/Symfony7-main/
+###< course material ###
+
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###

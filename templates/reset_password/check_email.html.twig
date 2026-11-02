@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'security.reset.check_email_title'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <h1>{{ 'security.reset.check_email_title'|trans }}</h1>
+    <p class="lede">
+        {{ 'security.reset.check_email_body'|trans }}
+        {{ resetToken.expirationMessageKey|trans(resetToken.expirationMessageData, 'ResetPasswordBundle') }}
+    </p>
+    <p><a href="{{ path('app_login') }}">{{ 'security.reset.back_to_login'|trans }}</a></p>
+{% endblock %}

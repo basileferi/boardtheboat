@@ -1,0 +1,56 @@
+doctrine:
+    dbal:
+        # The server version is pinned in DATABASE_URL (MariaDB only, see docs/adr/0002).
+        url: '%env(resolve:DATABASE_URL)%'
+        profiling_collect_backtrace: '%kernel.debug%'
+        # Pinned explicitly: MariaDB 11.4 would otherwise default utf8mb4 to
+        # utf8mb4_uca1400_ai_ci, which the Infomaniak server may not offer.
+        default_table_options:
+            charset: utf8mb4
+            collation: utf8mb4_unicode_ci
+            # WAMP's MariaDB defaults to MyISAM, which accepts CREATE statements with foreign
+            # keys and then silently drops them. Pinning InnoDB keeps referential integrity
+            # (and the ON DELETE CASCADE the GDPR deletion relies on) real in every environment.
+            engine: InnoDB
+    orm:
+        validate_xml_mapping: true
+        naming_strategy: doctrine.orm.naming_strategy.underscore
+        auto_mapping: true
+        mappings:
+            App:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Entity'
+                prefix: 'App\Entity'
+                alias: App
+        dql:
+            # Full-text search on job offers. Declared in both categories so it can be used as a
+            # boolean predicate in WHERE and as a relevance value in SELECT/ORDER BY.
+            string_functions:
+                MATCH_AGAINST: App\Doctrine\Query\MatchAgainstFunction
+            numeric_functions:
+                MATCH_SCORE: App\Doctrine\Query\MatchAgainstFunction
+
+when@test:
+    doctrine:
+        dbal:
+            # "TEST_TOKEN" is typically set by ParaTest
+            dbname_suffix: '_test%env(default::TEST_TOKEN)%'
+
+when@prod:
+    doctrine:
+        orm:
+            query_cache_driver:
+                type: pool
+                pool: doctrine.system_cache_pool
+            result_cache_driver:
+                type: pool
+                pool: doctrine.result_cache_pool
+
+    framework:
+        cache:
+            pools:
+                doctrine.result_cache_pool:
+                    adapter: cache.app
+                doctrine.system_cache_pool:
+                    adapter: cache.system

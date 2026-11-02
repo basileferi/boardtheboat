@@ -1,0 +1,329 @@
+layout:
+    skip_to_content: 'Skip to content'
+    main_navigation: 'Main navigation'
+    nav:
+        dashboard: Dashboard
+        offers: Offers
+        companies: Companies
+        recommendations: Recommendations
+        pipeline: Applications
+        profile: Profile
+        admin: Administration
+        login: 'Sign in'
+        logout: 'Sign out'
+    sound_on: 'Sound on'
+    sound_off: 'Sound off'
+    footer_navigation: 'Footer links'
+    theme:
+        system: 'Theme: system'
+        dark: 'Theme: dark'
+        light: 'Theme: light'
+    footer:
+        home: Home
+        sources: 'Free, public data:'
+home:
+    eyebrow: Logbook
+    title: 'Find the companies worth contacting'
+    lede: 'Every night, boardtheboat searches, deduplicates and ranks the companies and offers that fit your profile. You open the app and the list is already made — posted job or spontaneous application.'
+    cta_signin: 'Open the logbook'
+    cta_signup: 'Create an account'
+    pipeline_title: "Tonight's run"
+    step:
+        discover: Sound
+        dedupe: Merge
+        score: Rank
+        brief: Prepare
+    feature:
+        automatic:
+            label: 'Automatic mode'
+            title: 'The list is made before you arrive'
+            body: 'The pipeline queries public sources, merges duplicates by company number then by domain, and ranks what remains for your profile. No clicks required.'
+        spontaneous:
+            label: 'Spontaneous applications'
+            title: 'Companies, not only postings'
+            body: 'Most internships never reach a job board. Companies with no posted offer are ranked like the rest, with their careers page checked first.'
+        relance:
+            label: Follow-ups
+            title: 'Nobody falls through'
+            body: 'Sending an application schedules its follow-up. The due date lands in the logbook with a draft ready to copy.'
+    marquee: 'Developer internship|Data apprenticeship|DevOps|Cybersecurity|Full-stack|Spontaneous application|Follow-up at D+7'
+    stats_title: Live
+    stats:
+        offers: 'open tech internships'
+        france: 'in France'
+        companies: 'companies worth contacting'
+        sources: 'free sources queried'
+dashboard:
+    eyebrow: Cockpit
+    title: Dashboard
+    lede: 'What the last run found, and what is waiting on you.'
+    open_offers: 'Browse offers'
+    open_pipeline: 'Open applications'
+    open_recommendations: 'See the full ranking'
+    top_companies: 'Best ranked'
+    no_due: 'No follow-up due today.'
+    no_scores: 'Nothing ranked yet.'
+    fill_profile: 'Fill in my profile'
+    metric:
+        open_offers: 'Open offers'
+        companies: 'Companies in catalogue'
+        tracked: 'Applications tracked'
+        due: 'Follow-ups due'
+        due_unit: today
+        france_offers: 'In France'
+        response_rate: 'Response rate'
+    kpis: 'Key figures'
+    last_sync: 'Last sync'
+    never_synced: 'Never synced'
+    activity: 'Offers published over the last 14 days'
+    delta:
+        open_offers: '{0}Nothing new this week|{1}1 new this week|]1,Inf[%count% new this week'
+        france_offers: '{0}Nothing new this week|{1}1 new this week|]1,Inf[%count% new this week'
+        companies: '{0}None from the registry|{1}1 from the SIRENE registry|]1,Inf[%count% from the SIRENE registry'
+        tracked: '{0}None sent|{1}1 sent|]1,Inf[%count% sent'
+        response_rate: '{0}No interview yet|{1}1 interview or offer|]1,Inf[%count% interviews or offers'
+    sources_title: Sources
+    sources_lede: 'Open offers per free source.'
+    funnel_title: Funnel
+    funnel_lede: 'Your applications, stage by stage.'
+    latest_title: 'Latest offers'
+    no_offers: 'No offer yet: run "php bin/console app:jobs:refresh".'
+admin:
+    dashboard:
+        title: Administration
+        lede: 'Imports, career-page validation, user accounts and failed messages.'
+        eyebrow: 'Engine room'
+    refresh:
+        action: 'Refresh sources'
+        queued: 'Refresh queued: the worker will run it on its next slice.'
+    runs:
+        title: Runs
+        lede: 'The last ten collections, with their counters and errors.'
+        empty: 'No run recorded yet.'
+        started: Started
+        trigger: Trigger
+        status: Status
+        duration: Duration
+        counts: Counters
+locale:
+    fr: French
+    en: English
+security:
+    login:
+        title: 'Sign in'
+        email: 'E-mail address'
+        password: Password
+        remember_me: 'Remember me'
+        submit: 'Sign in'
+        forgot_password: 'Forgotten your password?'
+        no_account: 'Create an account'
+    register:
+        title: 'Create an account'
+        email: 'E-mail address'
+        locale: 'Interface language'
+        password: Password
+        password_repeat: 'Confirm the password'
+        agree_terms: 'I accept the privacy policy'
+        submit: 'Create my account'
+        have_account: 'I already have an account'
+        check_your_inbox: 'Account created. Check your inbox to confirm your address.'
+    verify_email:
+        confirmed: 'E-mail address confirmed. You can sign in.'
+        failed: 'This confirmation link is invalid or has expired.'
+    reset:
+        title: 'Forgotten password'
+        lede: 'Enter your e-mail address: if an account exists, a reset link will be sent to it.'
+        email: 'E-mail address'
+        submit: 'Send the link'
+        check_email_title: 'Check your inbox'
+        check_email_body: 'If an account matches that address, a reset link has just been sent.'
+        back_to_login: 'Back to sign in'
+        new_password: 'New password'
+        save: 'Save the password'
+        invalid_token: 'This reset link is invalid or has expired. Please request a new one.'
+        done: 'Password saved. You can sign in.'
+search:
+    eyebrow: Sounding
+    title: Offers
+    count: '{0}No offer|{1}1 offer|]1,Inf[%count% offers'
+    keyword: Keywords
+    keyword_placeholder: 'symfony, internship, data…'
+    company: Company
+    location: City
+    contract_type: Contract
+    work_mode: 'Work mode'
+    status: Status
+    region: Area
+    sort: Sort
+    sort_newest: Newest
+    sort_relevance: Relevance
+    apply: Filter
+    reset: Reset
+    no_result: 'No offer matches these filters.'
+    pick_an_offer: 'Select an offer to see the details.'
+    load_more: 'Load more offers'
+    published_on: 'published on'
+    open_original: 'Open the original posting'
+    company_website: 'Company website'
+    company_careers: 'Careers page'
+    via: via
+profile:
+    title: 'My profile'
+    lede: 'These fields drive the automatic ranking: the more precise they are, the more relevant the suggested companies.'
+    target_roles: 'Target roles'
+    keywords: Keywords
+    sectors: Sectors
+    skills: Skills
+    locations: 'Preferred cities'
+    languages: Languages
+    comma_separated: 'Separate values with commas.'
+    remote_preference: 'Remote work'
+    default_region: 'Default area'
+    start_date: 'Internship start'
+    duration_weeks: 'Duration (weeks)'
+    relance_delay: 'Follow-up delay (days)'
+    relance_delay_help: 'Days after sending before a follow-up becomes due.'
+    max_relances: 'Maximum follow-ups'
+    top_n: 'Companies enriched per run'
+    top_n_help: 'The pipeline prepares a brief for the N best-ranked companies.'
+    cv_text: 'CV (pasted text)'
+    cv_text_help: 'Kept on your account. Never sent to an external service without an explicit action from you.'
+    save: 'Save the profile'
+    saved: 'Profile saved.'
+recommendation:
+    eyebrow: Bearing
+    title: 'Recommended companies'
+    lede: 'Ranked for your profile, with the reason for each position. You can apply spontaneously even without a posted offer.'
+    edit_profile: 'Edit my profile'
+    empty: 'No company ranked yet. Fill in your profile, then come back here.'
+    score: 'Relevance score'
+    career_page: 'Careers page'
+    track: 'Track this company'
+pipeline:
+    eyebrow: Logbook
+    title: 'My applications'
+    lede: 'From spotting to answer, with the follow-ups due at the top.'
+    due_title: 'Follow-ups due'
+    due_since: 'due on'
+    empty_column: 'Nothing here yet.'
+    change_status: 'Change status'
+    apply_status: Update
+pipeline_status:
+    saved: Spotted
+    to_apply: 'To apply'
+    applied: Applied
+    interview: Interview
+    rejected: Rejected
+    offer: Offer
+application:
+    save_action: Save
+    unsave_action: Remove
+    saved: 'Added to your applications.'
+    unsaved: 'Removed from your applications.'
+    status_changed: 'Status updated.'
+    deleted: 'Application deleted.'
+contract_type:
+    internship: Internship
+    apprenticeship: Apprenticeship
+    fixed_term: 'Fixed term'
+    permanent: Permanent
+    freelance: Freelance
+    other: Other
+work_mode:
+    onsite: 'On site'
+    remote: Remote
+    hybrid: Hybrid
+    unknown: 'Not stated'
+offer_status:
+    open: Open
+    closed: Closed
+    expired: Expired
+region:
+    france: France
+    international: International
+company_size:
+    unknown: 'Unknown size'
+    micro: '1 to 9 employees'
+    small: '10 to 49 employees'
+    medium: '50 to 249 employees'
+    large: '250 to 4999 employees'
+    very_large: '5000 employees or more'
+remote_preference:
+    any: 'No preference'
+    onsite: 'On site'
+    remote: Remote
+    hybrid: Hybrid
+relevance:
+    reason:
+        keywords:
+            full: 'Matches your keywords'
+            partial: 'Partly matches your keywords'
+            none: 'Outside your keywords'
+        sector:
+            full: 'Target sector'
+            partial: 'Nearby sector'
+            none: 'Different sector'
+        location:
+            full: 'In a preferred city'
+            partial: 'In your area'
+            none: 'Outside your area'
+        reachability:
+            full: 'Careers page verified'
+            partial: 'Careers page to verify'
+            none: 'No usable careers page'
+source:
+    themuse: 'The Muse'
+    himalayas: Himalayas
+    arbeitnow: Arbeitnow
+    francetravail: 'France Travail'
+    recherche_entreprises: 'French company registry'
+    fixtures: Demo
+    manual: Manual
+
+company:
+    eyebrow: 'Manual mode'
+    title: 'Companies'
+    lede: 'The shared catalogue plus the companies you found yourself. Yours stay private.'
+    new_lede: 'Spotted one at a fair, through a friend, in an article? Add it: it joins the same ranking as the rest.'
+    search: 'Search'
+    search_placeholder: 'name or city'
+    only_mine: 'Only mine'
+    empty: 'No company matches. Add the first one with the button above.'
+    visibility_label: 'Visibility'
+    details: 'Details'
+    my_notes: 'My notes'
+    career_status: 'Careers page'
+    confirm_delete: 'Delete "%name%"? Linked applications go with it.'
+    visibility:
+        private: 'Private'
+        suggested: 'Suggested to catalogue'
+        catalogue: 'Catalogue'
+    career:
+        pending: 'To check'
+        valid: 'Verified'
+        invalid: 'Not found'
+        blocked: 'Forbidden by robots.txt'
+    field:
+        name: 'Name'
+        website: 'Website'
+        career_url: 'Careers page'
+        city: 'City'
+        country: 'Country'
+        sector: 'Sector'
+        size: 'Size'
+        siren: 'SIREN'
+        why: 'Why I like it'
+        notes: 'Notes'
+    action:
+        new: 'Add a company'
+        create: 'Add'
+        edit: 'Edit'
+        save: 'Save'
+        delete: 'Delete'
+        back: 'Back to the list'
+        suggest: 'Suggest to catalogue'
+    flash:
+        created: 'Company added. Its careers page will be checked in the background.'
+        updated: 'Company updated.'
+        deleted: 'Company deleted.'
+        suggested: 'Suggested to the catalogue, an admin will have a look.'

@@ -1,0 +1,18 @@
+{{ form_start(form, {attr: {class: 'form form--panel', novalidate: 'novalidate'}}) }}
+    <div class="grid-2">
+        {{ form_row(form.name) }}
+        {{ form_row(form.sector) }}
+        {{ form_row(form.website) }}
+        {{ form_row(form.careerUrl) }}
+        {{ form_row(form.city) }}
+        {{ form_row(form.country) }}
+        {{ form_row(form.size) }}
+        {{ form_row(form.siren) }}
+    </div>
+    {{ form_row(form.whyInteresting) }}
+    {{ form_row(form.notes) }}
+    <div class="row">
+        <button type="submit" class="button button--primary">{{ button_label|trans }}</button>
+        <a class="button button--quiet" href="{{ path('app_company_index') }}">{{ 'company.action.back'|trans }}</a>
+    </div>
+{{ form_end(form) }}

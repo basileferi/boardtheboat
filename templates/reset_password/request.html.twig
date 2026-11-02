@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'security.reset.title'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <h1>{{ 'security.reset.title'|trans }}</h1>
+    <p class="lede">{{ 'security.reset.lede'|trans }}</p>
+
+    {{ form_start(requestForm, {attr: {class: 'form form--narrow'}}) }}
+        {{ form_row(requestForm.email) }}
+        <button type="submit" class="button button--primary">{{ 'security.reset.submit'|trans }}</button>
+    {{ form_end(requestForm) }}
+{% endblock %}

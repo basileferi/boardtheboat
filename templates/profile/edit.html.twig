@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'profile.title'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1 data-split>{{ 'profile.title'|trans }}</h1>
+            <p class="lede">{{ 'profile.lede'|trans }}</p>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {class: 'form form--panel'}}) }}
+        <div class="grid-2">
+            {{ form_row(form.targetRoles) }}
+            {{ form_row(form.keywords) }}
+            {{ form_row(form.sectors) }}
+            {{ form_row(form.skills) }}
+            {{ form_row(form.preferredLocations) }}
+            {{ form_row(form.languages) }}
+            {{ form_row(form.remotePreference) }}
+            {{ form_row(form.defaultRegion) }}
+            {{ form_row(form.internshipStartDate) }}
+            {{ form_row(form.internshipDurationWeeks) }}
+            {{ form_row(form.relanceDelayDays) }}
+            {{ form_row(form.maxRelances) }}
+            {{ form_row(form.topN) }}
+        </div>
+
+        {{ form_row(form.cvText) }}
+
+        <div class="row">
+            <button type="submit" class="button button--primary">{{ 'profile.save'|trans }}</button>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

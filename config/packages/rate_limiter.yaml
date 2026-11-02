@@ -1,0 +1,32 @@
+framework:
+    rate_limiter:
+        # Sign-up and password-reset are the endpoints an attacker can use to send mail on our
+        # behalf, so both are limited per client IP on top of the firewall's login throttling.
+        registration:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 hour'
+        password_reset:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 hour'
+        # Protects the database from an expensive query loop; generous for a human.
+        search:
+            policy: 'token_bucket'
+            limit: 60
+            rate: { interval: '1 minute', amount: 30 }
+        # Cost control for Phase 2: brief generation may reach a paid API.
+        brief_generation:
+            policy: 'fixed_window'
+            limit: 30
+            interval: '1 day'
+        # Politeness towards the sites we fetch: one lane per remote host.
+        outbound_fetch:
+            policy: 'token_bucket'
+            limit: 5
+            rate: { interval: '1 second', amount: 1 }
+        # /_cron/tick: one worker slice per minute at most, whoever calls it
+        cron:
+            policy: 'fixed_window'
+            limit: 1
+            interval: '1 minute'

@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'recommendation.title'|trans }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">{{ 'recommendation.eyebrow'|trans }}</p>
+            <h1 data-split>{{ 'recommendation.title'|trans }}</h1>
+            <p class="lede">{{ 'recommendation.lede'|trans }}</p>
+        </div>
+        <a class="button" href="{{ path('app_profile') }}">{{ 'recommendation.edit_profile'|trans }}</a>
+    </div>
+
+    {% if scores is empty %}
+        <p class="empty-state">{{ 'recommendation.empty'|trans }}</p>
+    {% else %}
+        <div class="stack">
+            {% for score in scores %}
+                {% set company = score.company %}
+                <article class="panel panel--glow" data-reveal>
+                    <div class="row spread">
+                        <div>
+                            <h2>{{ company.name }}</h2>
+                            <p class="row muted">
+                                {% if company.city %}<span>{{ company.city }}</span>{% endif %}
+                                {% if company.sector %}<span>· {{ company.sector }}</span>{% endif %}
+                                <span class="tag">{{ ('company_size.' ~ company.size.value)|trans }}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <p class="sounding" role="img"
+                       aria-label="{{ 'recommendation.score'|trans }} {{ score.score }}/100">
+                        <span class="sounding__track">
+                            <span class="sounding__draught w-{{ (score.score / 5)|round * 5 }}"></span>
+                        </span>
+                        <span class="sounding__figure">{{ score.score }}</span>
+                    </p>
+
+                    <ul class="plain-list row">
+                        {% for reason in score.reasons %}
+                            <li><span class="tag">{{ reason|trans }}</span></li>
+                        {% endfor %}
+                    </ul>
+
+                    <div class="row">
+                        {% if company.careerUrl %}
+                            <a class="button" href="{{ company.careerUrl }}" target="_blank" rel="noopener noreferrer">
+                                {{ 'recommendation.career_page'|trans }}
+                            </a>
+                        {% endif %}
+                        <form method="post" action="{{ path('app_company_save', {id: company.id}) }}" class="inline-form">
+                            <input type="hidden" name="_token" value="{{ csrf_token('save-company') }}">
+                            <button type="submit" class="button button--primary" data-action="sonar#keep">
+                                {{ 'recommendation.track'|trans }}
+                            </button>
+                        </form>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

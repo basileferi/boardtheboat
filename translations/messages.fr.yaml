@@ -1,0 +1,329 @@
+layout:
+    skip_to_content: 'Aller au contenu'
+    main_navigation: 'Navigation principale'
+    nav:
+        dashboard: 'Tableau de bord'
+        offers: Offres
+        companies: Entreprises
+        recommendations: Recommandations
+        pipeline: Candidatures
+        profile: Profil
+        admin: Administration
+        login: 'Se connecter'
+        logout: 'Se déconnecter'
+    sound_on: 'Son activé'
+    sound_off: 'Son coupé'
+    footer_navigation: 'Liens de bas de page'
+    theme:
+        system: 'Thème : système'
+        dark: 'Thème : sombre'
+        light: 'Thème : clair'
+    footer:
+        home: Accueil
+        sources: 'Données publiques et gratuites :'
+home:
+    eyebrow: 'Carnet de bord'
+    title: 'Trouver les entreprises à contacter'
+    lede: "Chaque nuit, boardtheboat cherche, dédoublonne et classe les entreprises et les offres qui collent à votre profil. Vous ouvrez l'application, la liste est déjà prête — offre publiée ou candidature spontanée."
+    cta_signin: 'Ouvrir le carnet'
+    cta_signup: 'Créer un compte'
+    pipeline_title: 'Exécution de cette nuit'
+    step:
+        discover: Sonder
+        dedupe: Fusionner
+        score: Classer
+        brief: Préparer
+    feature:
+        automatic:
+            label: 'Mode automatique'
+            title: 'La liste est faite avant vous'
+            body: 'Le pipeline interroge les sources publiques, fusionne les doublons par SIREN puis par domaine, et classe le reste pour votre profil. Aucun clic requis.'
+        spontaneous:
+            label: 'Candidature spontanée'
+            title: 'Des entreprises, pas seulement des offres'
+            body: 'La plupart des recrutements de stage ne passent jamais par une annonce. Les entreprises sans offre publiée sont classées comme les autres, avec leur page carrières vérifiée.'
+        relance:
+            label: Relances
+            title: 'Personne ne passe à la trappe'
+            body: "Une candidature envoyée programme sa relance. L'échéance arrive dans le carnet, avec un brouillon prêt à copier."
+    marquee: 'Stage développeur|Alternance data|DevOps|Cybersécurité|Full-stack|Candidature spontanée|Relance à J+7'
+    stats_title: 'En direct'
+    stats:
+        offers: 'offres de stage tech ouvertes'
+        france: 'en France'
+        companies: 'entreprises à contacter'
+        sources: 'sources gratuites interrogées'
+dashboard:
+    eyebrow: 'Poste de pilotage'
+    title: 'Tableau de bord'
+    lede: 'Ce que la dernière exécution a trouvé, et ce qui attend une action de votre part.'
+    open_offers: 'Voir les offres'
+    open_pipeline: 'Ouvrir les candidatures'
+    open_recommendations: 'Voir le classement complet'
+    top_companies: 'Mieux classées'
+    no_due: 'Aucune relance à faire aujourd’hui.'
+    no_scores: 'Aucun classement pour le moment.'
+    fill_profile: 'Compléter mon profil'
+    metric:
+        open_offers: 'Offres ouvertes'
+        companies: 'Entreprises au catalogue'
+        tracked: 'Candidatures suivies'
+        due: 'Relances dues'
+        due_unit: auj.
+        france_offers: 'En France'
+        response_rate: 'Taux de réponse'
+    kpis: 'Indicateurs clés'
+    last_sync: 'Dernière synchro'
+    never_synced: 'Jamais synchronisé'
+    activity: 'Offres publiées ces 14 derniers jours'
+    delta:
+        open_offers: '{0}Aucune nouvelle cette semaine|{1}1 nouvelle cette semaine|]1,Inf[%count% nouvelles cette semaine'
+        france_offers: '{0}Aucune nouvelle cette semaine|{1}1 nouvelle cette semaine|]1,Inf[%count% nouvelles cette semaine'
+        companies: '{0}Aucune issue du registre|{1}1 issue du registre SIRENE|]1,Inf[%count% issues du registre SIRENE'
+        tracked: '{0}Aucune envoyée|{1}1 envoyée|]1,Inf[%count% envoyées'
+        response_rate: '{0}Aucun entretien pour l’instant|{1}1 entretien ou offre|]1,Inf[%count% entretiens ou offres'
+    sources_title: Sources
+    sources_lede: 'Offres ouvertes par source gratuite.'
+    funnel_title: Entonnoir
+    funnel_lede: 'Vos candidatures, étape par étape.'
+    latest_title: 'Dernières offres'
+    no_offers: 'Aucune offre pour l’instant : lancez « php bin/console app:jobs:refresh ».'
+admin:
+    dashboard:
+        title: Administration
+        lede: 'Imports, validation des pages carrières, comptes utilisateurs et messages en échec.'
+        eyebrow: 'Salle des machines'
+    refresh:
+        action: 'Rafraîchir les sources'
+        queued: 'Rafraîchissement mis en file : le worker le traitera à sa prochaine tranche.'
+    runs:
+        title: Exécutions
+        lede: 'Les dix dernières collectes, avec leurs compteurs et leurs erreurs.'
+        empty: 'Aucune exécution enregistrée.'
+        started: Début
+        trigger: Déclencheur
+        status: Statut
+        duration: Durée
+        counts: Compteurs
+locale:
+    fr: Français
+    en: Anglais
+security:
+    login:
+        title: Connexion
+        email: 'Adresse e-mail'
+        password: 'Mot de passe'
+        remember_me: 'Se souvenir de moi'
+        submit: 'Se connecter'
+        forgot_password: 'Mot de passe oublié ?'
+        no_account: 'Créer un compte'
+    register:
+        title: 'Créer un compte'
+        email: 'Adresse e-mail'
+        locale: "Langue de l'interface"
+        password: 'Mot de passe'
+        password_repeat: 'Confirmer le mot de passe'
+        agree_terms: "J'accepte la politique de confidentialité"
+        submit: 'Créer mon compte'
+        have_account: "J'ai déjà un compte"
+        check_your_inbox: 'Compte créé. Vérifiez votre boîte e-mail pour activer votre adresse.'
+    verify_email:
+        confirmed: 'Adresse e-mail confirmée. Vous pouvez vous connecter.'
+        failed: 'Ce lien de confirmation est invalide ou a expiré.'
+    reset:
+        title: 'Mot de passe oublié'
+        lede: 'Indiquez votre adresse e-mail : si un compte existe, vous recevrez un lien de réinitialisation.'
+        email: 'Adresse e-mail'
+        submit: 'Envoyer le lien'
+        check_email_title: 'Vérifiez votre boîte e-mail'
+        check_email_body: 'Si un compte correspond à cette adresse, un lien de réinitialisation vient de partir.'
+        back_to_login: 'Retour à la connexion'
+        new_password: 'Nouveau mot de passe'
+        save: 'Enregistrer le mot de passe'
+        invalid_token: 'Ce lien de réinitialisation est invalide ou a expiré. Demandez-en un nouveau.'
+        done: 'Mot de passe enregistré. Vous pouvez vous connecter.'
+search:
+    eyebrow: Sondage
+    title: Offres
+    count: '{0}Aucune offre|{1}1 offre|]1,Inf[%count% offres'
+    keyword: Mots-clés
+    keyword_placeholder: 'symfony, alternance, data…'
+    company: Entreprise
+    location: Ville
+    contract_type: Contrat
+    work_mode: 'Mode de travail'
+    status: Statut
+    region: Zone
+    sort: Tri
+    sort_newest: 'Plus récentes'
+    sort_relevance: Pertinence
+    apply: Filtrer
+    reset: Réinitialiser
+    no_result: 'Aucune offre ne correspond à ces filtres.'
+    pick_an_offer: 'Sélectionnez une offre pour voir le détail.'
+    load_more: 'Charger les offres suivantes'
+    published_on: 'publiée le'
+    open_original: "Voir l'offre d'origine"
+    company_website: "Site de l'entreprise"
+    company_careers: 'Page carrières'
+    via: via
+profile:
+    title: 'Mon profil'
+    lede: 'Ces informations pilotent le classement automatique : plus elles sont précises, plus les entreprises proposées sont pertinentes.'
+    target_roles: 'Postes visés'
+    keywords: Mots-clés
+    sectors: "Secteurs d'activité"
+    skills: Compétences
+    locations: 'Villes souhaitées'
+    languages: Langues
+    comma_separated: 'Séparez les valeurs par des virgules.'
+    remote_preference: Télétravail
+    default_region: 'Zone par défaut'
+    start_date: 'Début du stage'
+    duration_weeks: 'Durée (semaines)'
+    relance_delay: 'Délai de relance (jours)'
+    relance_delay_help: "Nombre de jours après l'envoi avant qu'une relance apparaisse."
+    max_relances: 'Nombre maximum de relances'
+    top_n: 'Entreprises enrichies par exécution'
+    top_n_help: 'Le pipeline prépare une fiche pour les N entreprises les mieux classées.'
+    cv_text: 'CV (texte collé)'
+    cv_text_help: 'Conservé sur votre compte. Jamais envoyé à un service externe sans une action explicite de votre part.'
+    save: 'Enregistrer le profil'
+    saved: 'Profil enregistré.'
+recommendation:
+    eyebrow: Relèvement
+    title: 'Entreprises recommandées'
+    lede: 'Classées pour votre profil, avec la raison de chaque position. Vous pouvez postuler spontanément même sans offre publiée.'
+    edit_profile: 'Modifier mon profil'
+    empty: "Aucune entreprise classée pour l'instant. Complétez votre profil, puis revenez ici."
+    score: 'Score de pertinence'
+    career_page: 'Page carrières'
+    track: 'Suivre cette entreprise'
+pipeline:
+    eyebrow: 'Journal de bord'
+    title: 'Mes candidatures'
+    lede: 'Du repérage à la réponse, avec les relances à faire en haut.'
+    due_title: 'À relancer'
+    due_since: 'échéance du'
+    empty_column: 'Rien ici pour le moment.'
+    change_status: 'Changer le statut'
+    apply_status: 'Mettre à jour'
+pipeline_status:
+    saved: Repérée
+    to_apply: 'À postuler'
+    applied: 'Candidature envoyée'
+    interview: Entretien
+    rejected: Refusée
+    offer: Proposition
+application:
+    save_action: Enregistrer
+    unsave_action: Retirer
+    saved: 'Ajouté à vos candidatures.'
+    unsaved: 'Retiré de vos candidatures.'
+    status_changed: 'Statut mis à jour.'
+    deleted: 'Candidature supprimée.'
+contract_type:
+    internship: Stage
+    apprenticeship: Alternance
+    fixed_term: CDD
+    permanent: CDI
+    freelance: Freelance
+    other: Autre
+work_mode:
+    onsite: 'Sur site'
+    remote: Télétravail
+    hybrid: Hybride
+    unknown: 'Non précisé'
+offer_status:
+    open: Ouverte
+    closed: Fermée
+    expired: Expirée
+region:
+    france: France
+    international: International
+company_size:
+    unknown: 'Taille inconnue'
+    micro: '1 à 9 salariés'
+    small: '10 à 49 salariés'
+    medium: '50 à 249 salariés'
+    large: '250 à 4999 salariés'
+    very_large: '5000 salariés et plus'
+remote_preference:
+    any: 'Peu importe'
+    onsite: 'Sur site'
+    remote: Télétravail
+    hybrid: Hybride
+relevance:
+    reason:
+        keywords:
+            full: 'Correspond à vos mots-clés'
+            partial: 'Correspond en partie à vos mots-clés'
+            none: 'Hors de vos mots-clés'
+        sector:
+            full: 'Secteur visé'
+            partial: 'Secteur proche'
+            none: 'Autre secteur'
+        location:
+            full: 'Dans une ville souhaitée'
+            partial: 'Dans votre zone'
+            none: 'Hors de votre zone'
+        reachability:
+            full: 'Page carrières vérifiée'
+            partial: 'Page carrières à vérifier'
+            none: 'Pas de page carrières exploitable'
+source:
+    themuse: 'The Muse'
+    himalayas: Himalayas
+    arbeitnow: Arbeitnow
+    francetravail: 'France Travail'
+    recherche_entreprises: 'API Recherche d’entreprises'
+    fixtures: Démo
+    manual: Manuel
+
+company:
+    eyebrow: 'Mode manuel'
+    title: 'Entreprises'
+    lede: "Le catalogue partagé et les entreprises que vous avez trouvées vous-même. Les vôtres restent privées."
+    new_lede: "Une boîte repérée sur un salon, un ami, un article ? Ajoutez-la : elle entre dans le même classement que le reste."
+    search: 'Rechercher'
+    search_placeholder: 'nom ou ville'
+    only_mine: 'Seulement les miennes'
+    empty: "Aucune entreprise ne correspond. Ajoutez la première avec le bouton en haut."
+    visibility_label: 'Visibilité'
+    details: 'Fiche'
+    my_notes: 'Mes notes'
+    career_status: 'Page carrières'
+    confirm_delete: 'Supprimer « %name% » ? Les candidatures liées partent avec.'
+    visibility:
+        private: 'Privée'
+        suggested: 'Proposée au catalogue'
+        catalogue: 'Catalogue'
+    career:
+        pending: 'À vérifier'
+        valid: 'Vérifiée'
+        invalid: 'Introuvable'
+        blocked: 'Interdite par robots.txt'
+    field:
+        name: 'Nom'
+        website: 'Site web'
+        career_url: 'Page carrières'
+        city: 'Ville'
+        country: 'Pays'
+        sector: 'Secteur'
+        size: 'Taille'
+        siren: 'SIREN'
+        why: 'Pourquoi elle me plaît'
+        notes: 'Notes'
+    action:
+        new: 'Ajouter une entreprise'
+        create: 'Ajouter'
+        edit: 'Modifier'
+        save: 'Enregistrer'
+        delete: 'Supprimer'
+        back: 'Retour à la liste'
+        suggest: 'Proposer au catalogue'
+    flash:
+        created: 'Entreprise ajoutée. On vérifiera sa page carrières en arrière-plan.'
+        updated: 'Entreprise mise à jour.'
+        deleted: 'Entreprise supprimée.'
+        suggested: 'Proposée au catalogue, un admin va la regarder.'

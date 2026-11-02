@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ company.name }} — boardtheboat{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">{{ 'company.action.edit'|trans }}</p>
+            <h1>{{ company.name }}</h1>
+        </div>
+    </div>
+
+    {{ include('company/_form.html.twig', {button_label: 'company.action.save'}) }}
+    {{ include('company/_delete_form.html.twig') }}
+{% endblock %}

@@ -1,0 +1,94 @@
+security:
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+
+    role_hierarchy:
+        ROLE_ADMIN: [ROLE_USER]
+
+    firewalls:
+        dev:
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+        # api (cours 15): POST /api/login with {"username", "password"} returns a jwt...
+        api_login:
+            pattern: ^/api/login
+            stateless: true
+            provider: app_user_provider
+            user_checker: App\Security\AccountStatusChecker
+            json_login:
+                check_path: api_login
+                username_path: username
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+        # ...then every /api call sends "Authorization: Bearer <token>". no session, no cookie,
+        # so no csrf token either: a forged cross-site request cannot carry the header.
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            user_checker: App\Security\AccountStatusChecker
+            jwt: ~
+        main:
+            lazy: true
+            provider: app_user_provider
+            user_checker: App\Security\AccountStatusChecker
+            entry_point: form_login
+
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                username_parameter: email
+                password_parameter: password
+                enable_csrf: true
+                default_target_path: app_dashboard
+
+            logout:
+                path: app_logout
+                target: app_home
+
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 2592000 # 30 days
+                secure: auto
+                httponly: true
+                samesite: lax
+                signature_properties: [password, email]
+
+            login_throttling:
+                max_attempts: 5          # per minute, per IP + username pair
+                interval: '15 minutes'
+
+    access_control:
+        # Public: home, about, legal pages, and the whole authentication flow.
+        # Route paths stay in English in every locale; only the /{_locale} prefix changes.
+        - { path: '^/(fr|en)?/?$', roles: PUBLIC_ACCESS }
+        - { path: '^/(fr|en)/(login|register|password|verify-email)', roles: PUBLIC_ACCESS }
+        - { path: '^/(fr|en)/(about|legal-notice|privacy)', roles: PUBLIC_ACCESS }
+        - { path: '^/_cron', roles: PUBLIC_ACCESS }
+        - { path: '^/api/login', roles: PUBLIC_ACCESS }
+        - { path: '^/api', roles: IS_AUTHENTICATED_FULLY }
+        # Everything under /admin needs the admin role; attribute checks repeat it per action.
+        - { path: '^/(fr|en)/admin', roles: ROLE_ADMIN }
+        # Anything else is for signed-in users.
+        - { path: '^/(fr|en)/', roles: ROLE_USER }
+
+when@test:
+    security:
+        password_hashers:
+            # Password hashers are resource-intensive by design. In tests, the lowest cost
+            # keeps the suite fast without changing any behaviour under test.
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10

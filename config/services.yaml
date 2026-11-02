@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+parameters:
+    app.registration_open: '%env(bool:APP_REGISTRATION_OPEN)%'
+    app.mailer_from_address: '%env(MAILER_FROM_ADDRESS)%'
+    app.mailer_from_name: '%env(MAILER_FROM_NAME)%'
+    app.admin_alert_address: '%env(ADMIN_ALERT_ADDRESS)%'
+    app.http_fetcher_contact_url: '%env(HTTP_FETCHER_CONTACT_URL)%'
+    app.supported_locales: ['fr', 'en']
+    # seconds /_cron/tick spends consuming messenger (infomaniak web tasks time out around 60 s)
+    app.cron_time_limit: 40
+
+services:
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        # Parameters above are injected at the point of use with #[Autowire(param: '…')]
+        # rather than through global binds: an unused bind is a container error, and the
+        # attribute keeps the dependency visible in the constructor that actually needs it.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+    # the only client allowed to reach a user-provided url: refuses private networks, also after
+    # dns resolution (ssrf). used by SafeHttpFetcher and RobotsPolicy.
+    app.safe_http_client:
+        class: Symfony\Component\HttpClient\NoPrivateNetworkHttpClient
+        arguments: ['@http_client']
+
+when@test:
+    parameters:
+        app.cron_time_limit: 1
+
+    services:
+        App\Tests\Support\OfflineHttpResponses: ~
+        # the guard resolves hostnames itself, which is a dns lookup: tests stay offline instead
+        app.safe_http_client:
+            alias: http_client

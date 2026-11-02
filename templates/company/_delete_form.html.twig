@@ -1,0 +1,11 @@
+{# un vrai DELETE : le navigateur ne sait envoyer que GET/POST, symfony lit _method #}
+<form method="post"
+      action="{{ path('app_company_delete', {id: company.id}) }}"
+      class="inline-form"
+      data-controller="confirm"
+      data-confirm-message-value="{{ 'company.confirm_delete'|trans({'%name%': company.name}) }}"
+      data-action="submit->confirm#ask">
+    <input type="hidden" name="_method" value="DELETE">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ company.id) }}">
+    <button type="submit" class="button button--quiet">{{ 'company.action.delete'|trans }}</button>
+</form>

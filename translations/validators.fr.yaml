@@ -1,0 +1,25 @@
+# Messages des contraintes de validation. Symfony les cherche dans le domaine
+# "validators", pas dans "messages" : c'est pour ça qu'on voyait les clés brutes.
+# Ton volontaire : minuscules, court, et on dit quoi faire.
+security:
+    register:
+        email_required: 'il manque ton adresse e-mail'
+        email_invalid: "cette adresse ne ressemble pas à un e-mail"
+        password_required: 'choisis un mot de passe'
+        password_too_short: 'un peu court : au moins {{ limit }} caractères (une petite phrase, ça marche très bien)'
+        password_compromised: 'ce mot de passe a déjà fuité sur d’autres sites, prends-en un autre'
+        password_mismatch: 'les deux mots de passe ne sont pas identiques'
+        agree_terms_required: 'il faut accepter la politique de confidentialité pour continuer'
+    reset:
+        email_required: 'il manque ton adresse e-mail'
+user:
+    email:
+        already_used: 'un compte existe déjà avec cette adresse, essaie de te connecter'
+company:
+    name:
+        required: 'il faut au moins un nom'
+    url:
+        invalid: "ce n'est pas une adresse web valide (https://…)"
+        unsafe: 'lien refusé : seulement http/https, pas d’adresse locale ni privée'
+    siren:
+        invalid: 'un siren, c’est 9 chiffres, sans espace'

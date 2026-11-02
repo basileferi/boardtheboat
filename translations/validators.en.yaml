@@ -1,0 +1,23 @@
+# Constraint messages live in the "validators" domain, not "messages".
+security:
+    register:
+        email_required: 'your e-mail address is missing'
+        email_invalid: "that doesn't look like an e-mail address"
+        password_required: 'pick a password'
+        password_too_short: 'a bit short: at least {{ limit }} characters (a short sentence works great)'
+        password_compromised: 'this password already leaked on other sites, pick another one'
+        password_mismatch: "the two passwords don't match"
+        agree_terms_required: 'you need to accept the privacy policy to continue'
+    reset:
+        email_required: 'your e-mail address is missing'
+user:
+    email:
+        already_used: 'an account already uses this address, try signing in'
+company:
+    name:
+        required: 'a name is needed'
+    url:
+        invalid: "that's not a valid web address (https://…)"
+        unsafe: 'link refused: http/https only, no local or private address'
+    siren:
+        invalid: 'a siren number is 9 digits, no spaces'

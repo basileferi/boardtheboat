@@ -1,0 +1,8 @@
+# Messages raised by the security layer itself (AuthenticationException::getMessageKey()).
+'Invalid credentials.': 'Wrong e-mail address or password.'
+'Too many failed login attempts, please try again later.': 'Too many failed attempts. Try again in a few minutes.'
+'Invalid CSRF token.': 'Your session expired. Reload the page and try again.'
+security:
+    account:
+        disabled: 'This account is disabled.'
+        unverified: 'Confirm your e-mail address first: the link was sent when the account was created.'
