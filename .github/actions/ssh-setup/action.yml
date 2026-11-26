@@ -1,0 +1,69 @@
+name: Configure SSH to production
+description: >-
+  Writes the deploy key and the pinned host key, then defines a "production" SSH alias.
+  Host keys are never trusted on first use: an unknown or changed key fails the connection.
+
+inputs:
+  private-key:
+    description: Dedicated ed25519 deploy key (no passphrase), from the environment secrets.
+    required: true
+  known-hosts:
+    description: Pinned known_hosts line(s) of the Infomaniak SSH host.
+    required: true
+  host:
+    description: SSH host name.
+    required: true
+  user:
+    description: SSH user dedicated to deployments.
+    required: true
+  port:
+    description: SSH port.
+    required: false
+    default: '22'
+
+runs:
+  using: composite
+  steps:
+    - name: Write SSH configuration
+      shell: bash
+      env:
+        SSH_PRIVATE_KEY: ${{ inputs.private-key }}
+        SSH_KNOWN_HOSTS: ${{ inputs.known-hosts }}
+        SSH_HOST: ${{ inputs.host }}
+        SSH_USER: ${{ inputs.user }}
+        SSH_PORT: ${{ inputs.port }}
+      run: |
+        set -euo pipefail
+
+        for name in SSH_PRIVATE_KEY SSH_KNOWN_HOSTS SSH_HOST SSH_USER; do
+          if [ -z "${!name}" ]; then
+            echo "::error::${name} is not configured on the 'production' environment."
+            exit 1
+          fi
+        done
+        [[ "$SSH_HOST" =~ ^[A-Za-z0-9.-]+$ ]] || { echo "::error::SSH_HOST has an unexpected format."; exit 1; }
+        [[ "$SSH_USER" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "::error::SSH_USER has an unexpected format."; exit 1; }
+        [[ "${SSH_PORT:-22}" =~ ^[0-9]{1,5}$ ]] || { echo "::error::SSH_PORT must be a number."; exit 1; }
+
+        umask 077
+        install -m 700 -d "$HOME/.ssh"
+        printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > "$HOME/.ssh/deploy_key"
+        printf '%s\n' "$SSH_KNOWN_HOSTS" | tr -d '\r' > "$HOME/.ssh/known_hosts"
+
+        cat > "$HOME/.ssh/config" <<EOF
+        Host production
+          HostName ${SSH_HOST}
+          Port ${SSH_PORT:-22}
+          User ${SSH_USER}
+          IdentityFile ~/.ssh/deploy_key
+          IdentitiesOnly yes
+          StrictHostKeyChecking yes
+          UserKnownHostsFile ~/.ssh/known_hosts
+          BatchMode yes
+          ConnectTimeout 20
+          ServerAliveInterval 15
+          ServerAliveCountMax 4
+        EOF
+
+        ssh production true
+        echo "SSH connection to production verified."

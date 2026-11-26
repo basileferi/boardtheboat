@@ -1,0 +1,66 @@
+name: Rollback production
+
+# Manual only: points "current" back to an earlier release already present on the host.
+# The database is not rolled back (see docs/DEPLOY.md).
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Release id to restore (e.g. 20261126101500-0123456789ab). Empty = the previous release.
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    name: Roll back production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    env:
+      TARGET_RELEASE: ${{ inputs.release }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      PHP_BIN: ${{ vars.PHP_BIN || '/opt/php8.4/bin/php' }}
+    steps:
+      - name: Checkout the deploy scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/actions
+            deploy
+
+      - name: Check inputs
+        run: |
+          set -euo pipefail
+          if [ -n "$TARGET_RELEASE" ] && ! [[ "$TARGET_RELEASE" =~ ^[0-9]{14}-[0-9a-f]{12}$ ]]; then
+            echo "::error::Release id must look like 20261126101500-0123456789ab."
+            exit 1
+          fi
+          [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+$ && "$DEPLOY_PATH" != *..* ]] || { echo "::error::DEPLOY_PATH must be an absolute path."; exit 1; }
+          [[ "$PHP_BIN" =~ ^/[A-Za-z0-9._/-]+$ ]] || { echo "::error::PHP_BIN must be an absolute path."; exit 1; }
+
+      - name: Configure SSH
+        uses: ./.github/actions/ssh-setup
+        with:
+          private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+          host: ${{ vars.SSH_HOST }}
+          user: ${{ vars.SSH_USER }}
+          port: ${{ vars.SSH_PORT || '22' }}
+
+      - name: Switch current to the earlier release
+        run: |
+          ssh production bash -s -- "'${DEPLOY_PATH}'" "'${PHP_BIN}'" "'${TARGET_RELEASE}'" < deploy/remote-rollback.sh
+
+      - name: Remove SSH material
+        if: always()
+        run: rm -rf "$HOME/.ssh"

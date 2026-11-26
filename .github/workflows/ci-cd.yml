@@ -1,0 +1,266 @@
+name: CI/CD
+
+# Every pull request and every push to master goes through the secret scan and the quality
+# gate. A push to master then builds one immutable release archive, and that archive is
+# deployed to Infomaniak only after a manual approval on the "production" environment.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Only pull requests cancel their superseded runs. Runs on master stay independent, so a deploy
+# waiting for approval never holds back the quality gate of the next push; deployments
+# themselves are serialised by the job-level "production-deploy" group.
+concurrency:
+  group: ci-cd-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PHP_VERSION: '8.4'
+  PHP_EXTENSIONS: ctype, iconv, intl, mbstring, pdo_mysql, sodium, xml, curl
+
+jobs:
+  secrets-scan:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install gitleaks (checksum verified)
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          set -euo pipefail
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$archive" | sha256sum --check --strict -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" gitleaks
+
+      - name: Scan the whole git history
+        run: '"$RUNNER_TEMP/gitleaks" git --redact --no-banner --exit-code 1 .'
+
+  qa:
+    name: Quality gate (PHP 8.4, MariaDB 10.6)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      # Same MariaDB line as production (Infomaniak runs 10.6.28).
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MARIADB_ROOT_PASSWORD: ci_only_root_password
+          MARIADB_DATABASE: boardtheboat_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+    env:
+      # Throwaway credentials of the CI service container, never used anywhere else.
+      DATABASE_URL: mysql://root:ci_only_root_password@127.0.0.1:3306/boardtheboat?serverVersion=10.6.28-MariaDB&charset=utf8mb4
+      JWT_PASSPHRASE: ci_only_jwt_passphrase
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Locate the Composer cache
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --no-check-all --no-check-publish
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Generate a throwaway JWT keypair
+        run: php bin/console lexik:jwt:generate-keypair --skip-if-exists
+
+      - name: Warm up the dev container (read by PHPStan)
+        run: php bin/console cache:warmup --env=dev
+
+      - name: Migrations build the schema on the production MariaDB version
+        run: |
+          php bin/console doctrine:database:create --if-not-exists
+          php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+          php bin/console doctrine:schema:validate
+
+      - name: Quality gate (cs, phpstan, linters, schema, audit, tests)
+        run: composer qa
+
+  build:
+    name: Build release
+    needs: [secrets-scan, qa]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      release-id: ${{ steps.package.outputs.release-id }}
+    env:
+      APP_ENV: prod
+      APP_DEBUG: '0'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Locate the Composer cache
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-
+
+      # --no-scripts: the auto-scripts would boot the kernel in the dev environment, whose
+      # bundles are not installed with --no-dev. The asset steps run explicitly below.
+      - name: Install production dependencies
+        run: composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-scripts
+
+      - name: Build front-end assets
+        run: |
+          php bin/console importmap:install --no-interaction
+          php bin/console assets:install public --no-interaction
+          php bin/console asset-map:compile --no-interaction
+
+      # var/ is never shipped: the container embeds absolute paths, so the cache is warmed
+      # on the server inside the release directory.
+      - name: Package the release archive
+        id: package
+        run: |
+          set -euo pipefail
+          release_id="$(date -u +%Y%m%d%H%M%S)-${GITHUB_SHA::12}"
+          printf '%s\n' "$GITHUB_SHA" > REVISION
+          mkdir -p dist
+          tar --create --gzip --file dist/release.tar.gz \
+            --owner=0 --group=0 --numeric-owner --sort=name \
+            --exclude='config/jwt' \
+            .env.dist REVISION composer.json composer.lock importmap.php \
+            assets bin config migrations public src templates translations vendor
+          (cd dist && sha256sum release.tar.gz > release.tar.gz.sha256)
+          echo "release-id=${release_id}" >> "$GITHUB_OUTPUT"
+          echo "Release ${release_id}: $(du -h dist/release.tar.gz | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the release archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy:
+    name: Deploy to production
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    env:
+      RELEASE_ID: ${{ needs.build.outputs.release-id }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      PHP_BIN: ${{ vars.PHP_BIN || '/opt/php8.4/bin/php' }}
+      KEEP_RELEASES: ${{ vars.KEEP_RELEASES || '5' }}
+      KEEP_BACKUPS: ${{ vars.KEEP_BACKUPS || '10' }}
+    steps:
+      - name: Checkout the deploy scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/actions
+            deploy
+
+      - name: Check deployment settings
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_ID" =~ ^[0-9]{14}-[0-9a-f]{12}$ ]] || { echo "::error::Unexpected release id '$RELEASE_ID'."; exit 1; }
+          [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+$ && "$DEPLOY_PATH" != *..* ]] || { echo "::error::DEPLOY_PATH must be an absolute path."; exit 1; }
+          [[ "$PHP_BIN" =~ ^/[A-Za-z0-9._/-]+$ ]] || { echo "::error::PHP_BIN must be an absolute path."; exit 1; }
+          [[ "$KEEP_RELEASES" =~ ^[0-9]+$ && "$KEEP_RELEASES" -ge 3 ]] || { echo "::error::KEEP_RELEASES must be 3 or more."; exit 1; }
+          [[ "$KEEP_BACKUPS" =~ ^[0-9]+$ && "$KEEP_BACKUPS" -ge 1 ]] || { echo "::error::KEEP_BACKUPS must be 1 or more."; exit 1; }
+
+      - name: Download the release archive
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: dist
+
+      - name: Verify the archive checksum
+        working-directory: dist
+        run: sha256sum --check --strict release.tar.gz.sha256
+
+      - name: Configure SSH
+        uses: ./.github/actions/ssh-setup
+        with:
+          private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+          host: ${{ vars.SSH_HOST }}
+          user: ${{ vars.SSH_USER }}
+          port: ${{ vars.SSH_PORT || '22' }}
+
+      - name: Upload the archive
+        run: |
+          set -euo pipefail
+          incoming="${DEPLOY_PATH}/.incoming/${RELEASE_ID}"
+          ssh production "mkdir -p '${incoming}' && chmod 700 '${DEPLOY_PATH}/.incoming' '${incoming}'"
+          scp -q dist/release.tar.gz dist/release.tar.gz.sha256 "production:${incoming}/"
+
+      - name: Install and activate the release
+        run: |
+          ssh production bash -s -- \
+            "'${DEPLOY_PATH}'" "'${RELEASE_ID}'" "'${PHP_BIN}'" "'${KEEP_RELEASES}'" "'${KEEP_BACKUPS}'" \
+            < deploy/remote-deploy.sh
+          echo "Deployed release \`${RELEASE_ID}\` (${GITHUB_SHA})." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove SSH material
+        if: always()
+        run: rm -rf "$HOME/.ssh"
