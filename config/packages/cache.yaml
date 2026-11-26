@@ -1,7 +1,10 @@
 framework:
     cache:
         # Unique name of your app: used to compute stable namespaces for cache keys.
-        #prefix_seed: your_vendor_name/app_name
+        # Fixed on purpose: the default seed contains the project directory, which changes with
+        # every release in production (releases/<id>), and would reset the scheduler state and
+        # the rate limiters at each deployment.
+        prefix_seed: boardtheboat/%kernel.environment%
 
         # The "app" cache stores to the filesystem by default.
         # The data in this cache should persist between deploys.

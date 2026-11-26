@@ -1,145 +1,234 @@
-# Mise en production — boardtheboat.basileferi.fr (Infomaniak, SSH)
+# Mise en production — boardtheboat.basileferi.fr (Infomaniak, GitHub Actions)
 
-Les commandes ci-dessous se lancent **sur le serveur**, en SSH (bash). Aucune ne se lance sur le
-poste Windows. Les secrets (mots de passe, clés) ne vont **jamais** dans git : ils vont dans
-`.env.local` sur le serveur.
+Le déploiement est automatique : chaque push sur `master` passe la CI, construit une archive de
+release, puis attend **ton approbation** dans GitHub avant d'être installée sur Infomaniak par SSH.
+Les secrets de l'application (base, `APP_SECRET`, `CRON_TOKEN`, JWT) ne vont **jamais** dans git ni
+dans GitHub : ils restent dans `shared/.env.local`, sur le serveur.
 
-## 1. Dans le Manager Infomaniak (une fois)
+## Vue d'ensemble
 
-1. **Site** `boardtheboat.basileferi.fr` → *Paramètres* :
-   - **version PHP : 8.4 ou plus** (l'appli refuse de s'installer en dessous) ;
-   - **dossier racine (document root) : `public`**. C'est le point le plus important : si le
-     domaine pointe sur la racine du projet, le `.env` et le code sont téléchargeables.
-2. **SSL** : certificat Let's Encrypt pour le sous-domaine, et *forcer HTTPS*.
-3. **Base de données** `jh6rkj_boardtheboat` sur `jh6rkj.myd.infomaniak.com` : vide, c'est normal
-   (voir l'étape 4). Dans phpMyAdmin Infomaniak, lancer `SELECT VERSION();` et noter le résultat,
-   par exemple `10.11.9-MariaDB` : il sert dans `DATABASE_URL`.
+```
+push / pull request ──► secrets-scan (gitleaks, tout l'historique)
+                    └─► qa : composer qa sur PHP 8.4 + MariaDB 10.6 (même version que la prod)
+                             + migrations jouées sur une base vide puis schema:validate
+push sur master ──────► build : composer --no-dev, importmap, asset-map:compile → release.tar.gz + sha256
+                    └─► deploy (environnement "production", approbation manuelle)
+                             upload SSH → vérif checksum → extraction → liens shared → cache:warmup
+                             → test connexion base → mysqldump si migrations en attente → migrate
+                             → bascule atomique du lien current → messenger:stop-workers → purge
+```
 
-## 2. Récupérer le code (SSH)
+Sur le serveur, dans `~/sites/boardtheboat.basileferi.fr` :
+
+```
+current -> releases/20261126101500-0123456789ab   ← document root : current/public
+releases/
+  20261126101500-0123456789ab/                    une release = un dossier figé (5 gardées)
+shared/                                           survit aux déploiements
+  .env.local                                      secrets de prod (chmod 600)
+  config/jwt/{private,public}.pem                 clés de l'api
+  var/log/                                        logs
+  var/share/                                      état du scheduler, rate limiters
+  backups/*.sql.gz                                dump avant chaque migration (10 gardés)
+.incoming/                                        archives en transit (vidé après install)
+```
+
+Si une étape échoue avant la bascule, le site continue de servir l'ancienne release, intacte.
+La bascule est un `rename` atomique : aucune requête ne voit un mélange d'ancien et de nouveau code.
+
+## 1. Une seule fois : Manager Infomaniak
+
+1. **Site** `boardtheboat.basileferi.fr` → version PHP **8.4**.
+2. **SSL** : certificat Let's Encrypt actif, *forcer HTTPS*.
+3. **FTP / SSH** : utilisateur SSH dédié au déploiement (`jh6rkj_deploy`).
+   - Pas de restriction d'adresse IP sur SSH : les machines GitHub Actions changent d'IP à
+     chaque exécution.
+   - L'utilisateur `jh6rkj_temporary_*` ne doit pas servir à la CI (il expire).
+4. **Base** : noter hôte, nom, utilisateur ; la version est `10.6.28-MariaDB`
+   (`SELECT VERSION();` dans phpMyAdmin). Elle doit être identique dans `DATABASE_URL`.
+
+## 2. Une seule fois : clé SSH de déploiement
+
+Sur ton poste (Git Bash ou PowerShell 7) :
 
 ```bash
-cd ~/sites/boardtheboat.basileferi.fr      # le dossier du site (vérifier le chemin exact dans le Manager)
-php -v                                     # doit afficher 8.4 ou plus
-git clone https://github.com/basileferi/boardtheboat.git .
-composer install --no-dev --optimize-autoloader
+ssh-keygen -t ed25519 -N "" -C "boardtheboat-deploy" -f ~/.ssh/boardtheboat_deploy
 ```
 
-`--no-dev` : pas de Faker, PHPUnit, Maker en prod. Le `composer install` lance aussi
-`importmap:install` (il télécharge Stimulus et Turbo, le serveur a besoin d'internet pour ça).
+- `~/.ssh/boardtheboat_deploy` (privée) → ira dans le secret GitHub `SSH_PRIVATE_KEY`, puis
+  supprime-la de ton poste si tu ne t'en sers pas ailleurs ;
+- `~/.ssh/boardtheboat_deploy.pub` (publique) → sur le serveur.
 
-## 3. Le fichier `.env.local` (sur le serveur seulement)
+Autoriser la clé sur le serveur (demande le mot de passe SSH une dernière fois ; ne rien
+afficher veut dire que c'est fait). En PowerShell :
+
+```powershell
+Get-Content $HOME\.ssh\boardtheboat_deploy.pub | ssh jh6rkj_deploy@jh6rkj.ftp.infomaniak.com "umask 077 && mkdir -p ~/.ssh && sed 's/^/restrict /' >> ~/.ssh/authorized_keys"
+```
+
+Vérifier : `ssh -i ~/.ssh/boardtheboat_deploy -o BatchMode=yes jh6rkj_deploy@jh6rkj.ftp.infomaniak.com 'echo ok'`
+doit afficher `ok` sans demander de mot de passe. Sur cet hébergement, tous les utilisateurs SSH
+partagent le même dossier personnel, donc le même `authorized_keys`.
+
+`restrict` coupe le transfert de ports, d'agent, X11 et le pseudo-terminal pour cette clé : elle
+ne sert qu'à lancer des commandes et copier des fichiers.
+
+**Empreinte du serveur** (pour que la CI refuse un faux serveur) : depuis ton poste, après t'être
+déjà connecté une fois en SSH au serveur,
 
 ```bash
-nano .env.local
+ssh-keygen -F jh6rkj.ftp.infomaniak.com -f ~/.ssh/known_hosts | grep -v '^#'
 ```
 
-```
-APP_ENV=prod
-APP_DEBUG=0
-APP_SECRET=<32 caractères au hasard : php -r "echo bin2hex(random_bytes(16));">
-DEFAULT_URI=https://boardtheboat.basileferi.fr
-DATABASE_URL="mysql://<utilisateur>:<mot_de_passe>@jh6rkj.myd.infomaniak.com:3306/jh6rkj_boardtheboat?serverVersion=<VERSION exacte, ex. 10.11.9-MariaDB>&charset=utf8mb4"
-TRUSTED_PROXIES=127.0.0.1,REMOTE_ADDR
-APP_REGISTRATION_OPEN=0
-MAILER_DSN=null://null
-MAILER_FROM_ADDRESS=noreply@basileferi.fr
-ADMIN_ALERT_ADDRESS=<ton e-mail>
-HTTP_FETCHER_CONTACT_URL=https://boardtheboat.basileferi.fr
-CRON_TOKEN=<64 caractères au hasard : php -r "echo bin2hex(random_bytes(32));">
-JWT_PASSPHRASE=<une longue phrase au hasard>
-```
+La ou les lignes affichées vont dans le secret `SSH_KNOWN_HOSTS`. Si le port n'est pas 22,
+cherche `[jh6rkj.ftp.infomaniak.com]:<port>`.
 
-À savoir :
+Si rien ne s'affiche (jamais connecté depuis ce poste), connecte-toi une première fois :
+`ssh -i ~/.ssh/boardtheboat_deploy jh6rkj_deploy@jh6rkj.ftp.infomaniak.com`. Avant de répondre `yes`, compare
+l'empreinte proposée avec celle que donne la console web du Manager :
+`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`. N'accepte que si elles sont identiques.
 
-- si le mot de passe de la base contient `@ : / ? # %`, il faut l'encoder dans l'URL
-  (`@` → `%40`, `#` → `%23`...) : `php -r "echo rawurlencode('le_mot_de_passe');"` ;
-- `serverVersion` doit être **la vraie version** du serveur Infomaniak, pas celle de WAMP ;
-- `TRUSTED_PROXIES` : chez Infomaniak le HTTPS est géré en amont. Sans cette ligne, Symfony croit
-  être en HTTP : cookies non sécurisés et liens `http://` dans les mails ;
-- `MAILER_DSN=null://null` tant qu'il n'y a pas d'adresse mail sur le domaine. Pour envoyer de
-  vrais mails : créer `noreply@basileferi.fr` chez Infomaniak, puis
-  `MAILER_DSN=smtp://noreply%40basileferi.fr:<mdp>@mail.infomaniak.com:587` ;
-- France Travail (optionnel) : `FRANCE_TRAVAIL_CLIENT_ID` / `_SECRET` après inscription sur
-  francetravail.io. Les autres sources n'ont pas besoin de clé.
+## 3. Une seule fois : préparer le dossier du site
 
-Ensuite :
+Depuis ton poste, à la racine du projet :
 
 ```bash
-composer dump-env prod      # fige tous les .env dans .env.local.php, lu en priorité et plus rapide
-chmod 600 .env.local .env.local.php
+scp deploy/server-init.sh jh6rkj_deploy@jh6rkj.ftp.infomaniak.com:~/
+ssh jh6rkj_deploy@jh6rkj.ftp.infomaniak.com
+bash ~/server-init.sh "$HOME/sites/boardtheboat.basileferi.fr" && rm ~/server-init.sh
 ```
 
-## 4. La base de données : les migrations
+Le script (relançable sans risque) crée `releases/`, `shared/`, `.incoming/`, une page d'attente
+servie par `current/public`, et `shared/.env.local` avec `APP_SECRET`, `CRON_TOKEN` et
+`JWT_PASSPHRASE` générés sur le serveur. Il ne remplace jamais un `.env.local` existant.
 
-La base est vide, et c'est voulu : **on ne copie pas la base de dev**. Les fichiers de
-`migrations/` contiennent le SQL qui construit toutes les tables. On les lance une fois :
+Compléter les `CHANGE_ME` (le déploiement refuse de tourner tant qu'il en reste un) :
 
 ```bash
-php bin/console doctrine:migrations:migrate -n
+nano ~/sites/boardtheboat.basileferi.fr/shared/.env.local
 ```
 
-Doctrine crée les tables et note dans `doctrine_migration_versions` quelles migrations sont
-passées. À chaque mise à jour du code, la même commande n'applique que les **nouvelles**
-migrations, sans toucher aux données existantes. C'est ce qui rend le déploiement simple.
+- `DATABASE_URL` : mot de passe **encodé pour une URL** (`#` → `%23`, `@` → `%40`, `?` → `%3F`...) :
+  `/opt/php8.4/bin/php -r "echo rawurlencode('le_mot_de_passe');"` ;
+- `DEFAULT_URI` et `HTTP_FETCHER_CONTACT_URL` : `https://boardtheboat.basileferi.fr` ;
+- `MAILER_DSN=null://null` tant qu'il n'y a pas de boîte mail. Pour envoyer : créer
+  `noreply@basileferi.fr`, puis `MAILER_DSN=smtp://noreply%40basileferi.fr:<mdp encodé>@mail.infomaniak.com:587` ;
+- `FRANCE_TRAVAIL_CLIENT_ID` / `_SECRET` : optionnels (francetravail.io).
 
-Vérification : `php bin/console doctrine:schema:validate` doit répondre que tout est synchronisé.
+Puis **Manager → site → dossier racine** : `sites/boardtheboat.basileferi.fr/current/public`
+(chemin tel que le Manager l'attend). Ouvrir `https://boardtheboat.basileferi.fr` : la page
+« Installation en cours. » doit s'afficher. Elle prouve que le document root suit bien le lien
+`current`.
 
-## 5. Clés JWT, assets, cache, premier compte
+## 4. Une seule fois : GitHub
+
+Dépôt → *Settings* → *Environments* → **New environment** `production` :
+
+- **Required reviewers** : toi. Rien ne part en prod sans ton clic. Laisser *Prevent
+  self-review* décoché, sinon tu ne peux pas approuver tes propres déploiements.
+- **Deployment branches and tags** : *Selected branches* → `master` uniquement.
+
+Dans cet environnement :
+
+| type | nom | valeur |
+|---|---|---|
+| secret | `SSH_PRIVATE_KEY` | contenu complet de `boardtheboat_deploy` (clé privée) |
+| secret | `SSH_KNOWN_HOSTS` | ligne(s) obtenues à l'étape 2 |
+| variable | `SSH_HOST` | hôte SSH Infomaniak |
+| variable | `SSH_USER` | `jh6rkj_deploy` |
+| variable | `SSH_PORT` | `22` (facultatif, 22 par défaut) |
+| variable | `DEPLOY_PATH` | `/home/clients/<identifiant>/sites/boardtheboat.basileferi.fr` (sortie de `echo "$HOME"` en SSH) |
+| variable | `APP_URL` | `https://boardtheboat.basileferi.fr` |
+| variable | `PHP_BIN` | facultatif, `/opt/php8.4/bin/php` par défaut |
+| variable | `KEEP_RELEASES` / `KEEP_BACKUPS` | facultatifs, `5` / `10` par défaut |
+
+Recommandé aussi : *Settings* → *Branches* → règle sur `master` exigeant les checks
+`Secret scan` et `Quality gate (PHP 8.4, MariaDB 10.6)` avant fusion d'une pull request.
+
+## 5. Premier déploiement
+
+Push sur `master` (ou *Actions* → *CI/CD* → *Run workflow* sur `master`), attendre la CI, puis
+**Review deployments** → *Approve*. Le premier déploiement génère aussi les clés JWT dans
+`shared/config/jwt` et applique toutes les migrations sur la base vide.
+
+On ne copie jamais la base de dev : les migrations construisent le schéma, et chaque mise à jour
+n'applique que les nouvelles. Ne jamais lancer `doctrine:fixtures:load` en prod (Faker n'y est
+d'ailleurs pas installé).
+
+Ensuite, une fois, en SSH :
 
 ```bash
-php bin/console lexik:jwt:generate-keypair        # clés de l'api, dans config/jwt (jamais dans git)
-php bin/console asset-map:compile                 # css / js / polices en fichiers statiques
-php bin/console cache:clear
-php bin/console cache:warmup
-php bin/console app:user:create-admin <ton e-mail>   # demande le mot de passe, sans l'afficher
-php bin/console app:pipeline:run                  # premier remplissage : offres + entreprises
+cd ~/sites/boardtheboat.basileferi.fr/current
+/opt/php8.4/bin/php bin/console app:user:create-admin <ton e-mail>   # demande le mot de passe sans l'afficher
+/opt/php8.4/bin/php bin/console app:pipeline:run                     # premier remplissage
 ```
 
-Ne pas lancer `doctrine:fixtures:load` en prod : les fixtures (Faker) sont des données de test et
-elles ne sont d'ailleurs pas installées avec `--no-dev`.
+## 6. Tâches planifiées (le « worker »)
 
-## 6. Tâches planifiées (le "worker")
-
-Les fiches entreprises et le pipeline de nuit passent par Messenger. Sur hébergement mutualisé il
-n'y a pas de worker permanent : c'est une URL protégée qui le fait tourner ~40 s.
-
-Manager → **Tâches planifiées (Cron)** → nouvelle tâche :
+Pas de worker permanent sur l'hébergement mutualisé : une URL protégée consomme la file Messenger
+pendant ~40 s. Manager → **Tâches planifiées** → nouvelle tâche :
 
 - type : appel d'URL ;
-- URL : `https://boardtheboat.basileferi.fr/_cron/tick?token=<CRON_TOKEN>` ;
+- URL : `https://boardtheboat.basileferi.fr/_cron/tick?token=<CRON_TOKEN de shared/.env.local>` ;
 - fréquence : toutes les 15 minutes.
 
-Sans le bon jeton, l'URL répond 404. Les mails, eux, partent tout de suite en prod (ils
-n'attendent pas le cron). Si SSH donne accès à `crontab -e`, on peut à la place lancer directement
-`php bin/console messenger:consume scheduler_default async --time-limit=840 --memory-limit=128M`.
+Sans le bon jeton, l'URL répond 404. Les mails partent tout de suite (transport `sync` en prod).
 
 ## 7. Vérifier
 
-- `https://boardtheboat.basileferi.fr/fr` s'affiche, en HTTPS ;
-- `https://boardtheboat.basileferi.fr/.env` → **404** (sinon le dossier racine n'est pas `public`) ;
+- `https://boardtheboat.basileferi.fr/fr` s'affiche en HTTPS ;
+- `https://boardtheboat.basileferi.fr/.env.local` et `/composer.json` → **404** ;
 - connexion avec le compte admin, puis `/fr/admin` ;
-- `https://boardtheboat.basileferi.fr/_cron/tick?token=<CRON_TOKEN>` → page vide (204).
+- `https://boardtheboat.basileferi.fr/_cron/tick?token=<CRON_TOKEN>` → réponse vide (204).
 
 ## Chaque mise à jour
 
+Rien à faire en SSH : push sur `master`, CI verte, approbation. Les nouvelles migrations sont
+appliquées automatiquement après un `mysqldump` de la base dans `shared/backups/`.
+
+Les migrations sont jouées **avant** la bascule : pendant quelques secondes l'ancien code tourne
+sur le nouveau schéma. Une migration doit donc rester compatible avec le code précédent (ajouter
+une colonne nullable, puis la rendre obligatoire dans une release suivante, etc.).
+
+Une modification de `shared/.env.local` s'applique dès la requête suivante : le fichier est relu
+à chaque requête, aucun redéploiement n'est nécessaire. Pour forcer une nouvelle release sans
+nouveau commit : *Actions* → *CI/CD* → *Run workflow* sur `master` (pas *Re-run* du seul job
+`deploy`, qui réutiliserait l'identifiant de la release déjà en ligne et serait refusé).
+
+OPcache peut servir l'ancienne release pendant au plus ~2 minutes après la bascule (cache des
+chemins de PHP). L'ancienne release reste sur le disque, donc rien ne casse pendant ce délai.
+
+## Revenir en arrière
+
+*Actions* → **Rollback production** → *Run workflow* (laisser vide pour la release précédente, ou
+donner un identifiant comme `20261126101500-0123456789ab`) → approbation. Le lien `current`
+repointe instantanément sur la release choisie.
+
+**La base n'est pas restaurée.** Si la release abandonnée avait apporté des migrations, restaurer
+le dump pris juste avant (nom : `<base>-<date>-before-<release>.sql.gz`) :
+
 ```bash
-git pull
-composer install --no-dev --optimize-autoloader
-php bin/console doctrine:migrations:migrate -n
-php bin/console asset-map:compile
-php bin/console cache:clear
+cd ~/sites/boardtheboat.basileferi.fr/shared/backups && ls -lt
+gunzip -c <fichier>.sql.gz | mysql -h <hôte base> -u <utilisateur> -p <base>
 ```
 
-Si tu as modifié `.env.local`, relance `composer dump-env prod`.
+Sans passer par GitHub, la même bascule se fait à la main en SSH :
+
+```bash
+cd ~/sites/boardtheboat.basileferi.fr && ls releases/
+ln -sfn releases/<id> .current.next && mv -Tf .current.next current
+```
 
 ## En cas de souci
 
 | symptôme | cause probable | solution |
 |---|---|---|
-| erreur 500 | voir `var/log/prod.log` | |
-| seule la page d'accueil marche | `.htaccess` absent ou mod_rewrite | `public/.htaccess` doit exister (symfony/apache-pack) |
-| page sans style | assets non compilés | `php bin/console asset-map:compile` |
-| `Access denied for user` | identifiants ou mot de passe mal encodé dans `DATABASE_URL` | encoder le mot de passe, puis `composer dump-env prod` |
-| `Unknown collation` ou erreur de syntaxe SQL | `serverVersion` ne correspond pas au serveur | mettre la vraie version, `dump-env prod`, `cache:clear` |
-| redirection en boucle ou cookies perdus | proxy HTTPS non reconnu | `TRUSTED_PROXIES=127.0.0.1,REMOTE_ADDR` |
-| JWT : `error:80000003` | config openssl introuvable | arrive surtout sous Windows ; sur le serveur, `openssl` en ligne de commande (voir cours 15) |
+| deploy : `.env.local still contains CHANGE_ME` | fichier pas complété | compléter `shared/.env.local` |
+| deploy : `cannot reach the database` | `DATABASE_URL` faux, mot de passe non encodé | encoder le mot de passe (étape 3) |
+| deploy : `Host key verification failed` | `SSH_KNOWN_HOSTS` absent ou faux | refaire l'étape 2 |
+| deploy : `Permission denied (publickey)` | clé publique pas autorisée pour `jh6rkj_deploy` | refaire l'étape 2 |
+| CI rouge sur `composer audit` | dépendance avec une faille connue | `composer update <paquet>` puis push : le déploiement est bloqué tant que la faille est présente |
+| erreur 500 | voir `~/ik-logs/` (logs Apache/PHP d'Infomaniak) et `shared/var/log/` | |
+| la page d'attente reste affichée | document root pas sur `current/public` | étape 3 |
+| `Unknown collation` / erreur SQL | `serverVersion` ≠ `10.6.28-MariaDB` | corriger `DATABASE_URL` dans `shared/.env.local` (pris en compte immédiatement) |
+| liens `http://`, cookies non sécurisés | HTTPS non détecté | vérifié le 2026-11-26 : Infomaniak passe `HTTPS=on` et la vraie IP du client à PHP, donc `TRUSTED_PROXIES=127.0.0.1`. Ne jamais y ajouter `REMOTE_ADDR` : tout client pourrait alors falsifier `X-Forwarded-For` et contourner les limites de requêtes par IP |

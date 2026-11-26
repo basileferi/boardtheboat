@@ -43,20 +43,20 @@
         "symfony/scheduler": "8.1.*",
         "symfony/security-bundle": "8.1.*",
         "symfony/serializer": "8.1.*",
-        "symfony/stimulus-bundle": "^3.6",
+        "symfony/stimulus-bundle": "^3.8",
         "symfony/string": "8.1.*",
         "symfony/translation": "8.1.*",
         "symfony/twig-bundle": "8.1.*",
         "symfony/uid": "8.1.*",
-        "symfony/ux-turbo": "^3.6",
+        "symfony/ux-turbo": "^3.8",
         "symfony/validator": "8.1.*",
         "symfony/web-link": "8.1.*",
         "symfony/yaml": "8.1.*",
         "symfonycasts/reset-password-bundle": "^1.25",
         "symfonycasts/verify-email-bundle": "^1.18",
-        "twig/extra-bundle": "^2.12|^3.0",
-        "twig/intl-extra": "^3.30",
-        "twig/twig": "^2.12|^3.0"
+        "twig/extra-bundle": "^2.12|^3.31",
+        "twig/intl-extra": "^3.31",
+        "twig/twig": "^2.12|^3.31.1"
     },
     "config": {
         "allow-plugins": {
@@ -151,7 +151,7 @@
         "symfony/css-selector": "8.1.*",
         "symfony/debug-bundle": "8.1.*",
         "symfony/maker-bundle": "^1.0",
-        "symfony/phpunit-bridge": "^8.1.10",
+        "symfony/phpunit-bridge": "^8.1.12",
         "symfony/stopwatch": "8.1.*",
         "symfony/web-profiler-bundle": "8.1.*",
         "zenstruck/foundry": "^2.13"

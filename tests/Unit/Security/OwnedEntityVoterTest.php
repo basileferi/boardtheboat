@@ -123,7 +123,7 @@ final class OwnedEntityVoterTest extends TestCase
         $owner = $this->persistedUser('owner@example.test');
         $application = new Application($owner, new Company('Acme'));
 
-        $token = $this->createMock(TokenInterface::class);
+        $token = $this->createStub(TokenInterface::class);
         $token->method('getUser')->willReturn(null);
 
         self::assertSame(
@@ -151,7 +151,7 @@ final class OwnedEntityVoterTest extends TestCase
 
     private function tokenFor(User $user): TokenInterface
     {
-        $token = $this->createMock(TokenInterface::class);
+        $token = $this->createStub(TokenInterface::class);
         $token->method('getUser')->willReturn($user);
 
         return $token;
