@@ -45,9 +45,33 @@ runs:
         [[ "$SSH_USER" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "::error::SSH_USER has an unexpected format."; exit 1; }
         [[ "${SSH_PORT:-22}" =~ ^[0-9]{1,5}$ ]] || { echo "::error::SSH_PORT must be a number."; exit 1; }
 
+        if [ "$SSH_USER" = "$SSH_HOST" ] || [[ "$SSH_USER" == *.*.* ]]; then
+          echo "::error::SSH_USER looks like a host name ('${SSH_USER}'): it must be the SSH login, e.g. jh6rkj_deploy."
+          exit 1
+        fi
+
         umask 077
         install -m 700 -d "$HOME/.ssh"
-        printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > "$HOME/.ssh/deploy_key"
+
+        # Rebuild the private key from what was pasted: CRLF, indentation, quotes and a key
+        # flattened onto one line (newlines turned into spaces) are all repaired here.
+        begin='-----BEGIN OPENSSH PRIVATE KEY-----'
+        end='-----END OPENSSH PRIVATE KEY-----'
+        flat="$(printf '%s' "$SSH_PRIVATE_KEY" | tr -d '\r' | tr '\n' ' ')"
+        if [[ "$flat" != *"$begin"*"$end"* ]]; then
+          echo "::error::SSH_PRIVATE_KEY must be the whole private key file, from '${begin}' to '${end}' (not the .pub file)."
+          exit 1
+        fi
+        body="${flat#*"$begin"}"
+        body="${body%%"$end"*}"
+        body="$(printf '%s' "$body" | tr -d ' \t')"
+        { echo "$begin"; printf '%s\n' "$body" | fold -w 70; echo "$end"; } > "$HOME/.ssh/deploy_key"
+        if ! ssh-keygen -y -P '' -f "$HOME/.ssh/deploy_key" > /dev/null 2>&1; then
+          echo "::error::SSH_PRIVATE_KEY is not a valid unencrypted OpenSSH key (truncated, altered or protected by a passphrase)."
+          exit 1
+        fi
+        echo "Deploy key:"
+        ssh-keygen -lf "$HOME/.ssh/deploy_key" | sed 's/^/  /'
         # Tolerate copy-paste artefacts (CR, surrounding quotes or backticks, blank lines).
         printf '%s\n' "$SSH_KNOWN_HOSTS" | tr -d '\r' \
           | sed -E "s/^[[:space:]\`'\"]+//; s/[[:space:]\`'\"]+$//" | grep -v '^$' > "$HOME/.ssh/known_hosts" || true
