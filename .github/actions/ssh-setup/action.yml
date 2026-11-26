@@ -48,7 +48,20 @@ runs:
         umask 077
         install -m 700 -d "$HOME/.ssh"
         printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > "$HOME/.ssh/deploy_key"
-        printf '%s\n' "$SSH_KNOWN_HOSTS" | tr -d '\r' > "$HOME/.ssh/known_hosts"
+        # Tolerate copy-paste artefacts (CR, surrounding quotes or backticks, blank lines).
+        printf '%s\n' "$SSH_KNOWN_HOSTS" | tr -d '\r' \
+          | sed -E "s/^[[:space:]\`'\"]+//; s/[[:space:]\`'\"]+$//" | grep -v '^$' > "$HOME/.ssh/known_hosts" || true
+
+        lookup="$SSH_HOST"
+        [ "${SSH_PORT:-22}" = "22" ] || lookup="[${SSH_HOST}]:${SSH_PORT}"
+        if ! ssh-keygen -F "$lookup" -f "$HOME/.ssh/known_hosts" >/dev/null; then
+          echo "::error::SSH_KNOWN_HOSTS has no entry for ${lookup}. Expected one line: '${lookup} ssh-ed25519 AAAA...'."
+          echo "Lines found (host and key type only):"
+          awk '{ print "  " $1 " " $2 }' "$HOME/.ssh/known_hosts" || true
+          exit 1
+        fi
+        echo "Pinned host key:"
+        ssh-keygen -F "$lookup" -f "$HOME/.ssh/known_hosts" | grep -v '^#' | ssh-keygen -lf - | sed 's/^/  /'
 
         cat > "$HOME/.ssh/config" <<EOF
         Host production
@@ -65,5 +78,11 @@ runs:
           ServerAliveCountMax 4
         EOF
 
-        ssh production true
+        if ! ssh production true; then
+          # Diagnostic only: show what the host presents, never trust it.
+          echo "Host key presented by ${SSH_HOST} (compare with the pinned one above):"
+          ssh-keyscan -p "${SSH_PORT:-22}" -t ed25519 "$SSH_HOST" 2>/dev/null | ssh-keygen -lf - | sed 's/^/  /' || true
+          echo "::error::SSH connection to production failed."
+          exit 1
+        fi
         echo "SSH connection to production verified."
